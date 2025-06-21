@@ -3,10 +3,10 @@ services:
     name: youtube-clone
     env: python
     buildCommand: "./build.sh"
-    startCommand: "gunicorn youtube_clone.wsgi:application"
+    startCommand: "gunicorn youtube_clone.wsgi:application --bind 0.0.0.0:$PORT"
     envVars:
       - key: PYTHON_VERSION
-        value: 3.12.0
+        value: 3.11.0
       - key: DJANGO_SETTINGS_MODULE
         value: youtube_clone.production_settings
       - key: SECRET_KEY
@@ -17,6 +17,12 @@ services:
         fromDatabase:
           name: youtube-clone-db
           property: connectionString
+      - key: SECURE_SSL_REDIRECT
+        value: "True"
+      - key: SESSION_COOKIE_SECURE
+        value: "True"
+      - key: CSRF_COOKIE_SECURE
+        value: "True"
     plan: free
 
 databases:
