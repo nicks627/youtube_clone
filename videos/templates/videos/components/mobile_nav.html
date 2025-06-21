@@ -1,44 +1,247 @@
 <!-- Mobile Bottom Navigation -->
-<nav class="yt-mobile-nav">
+<nav class="yt-mobile-nav" id="mobileNav">
     <div class="yt-mobile-nav-items">
-        <a href="{% url 'video_list' %}" class="yt-mobile-nav-item {% if request.resolver_match.url_name == 'video_list' %}active{% endif %}">
-            <i class="fas fa-home"></i>
-            <span>ホーム</span>
+        <a href="{% url 'video_list' %}" class="yt-mobile-nav-item {% if request.resolver_match.url_name == 'video_list' %}active{% endif %}" data-page="home">
+            <div class="yt-mobile-nav-icon">
+                <i class="fas fa-home"></i>
+            </div>
+            <span class="yt-mobile-nav-text">ホーム</span>
         </a>
         
-        <a href="{% url 'explore' %}" class="yt-mobile-nav-item {% if request.resolver_match.url_name == 'explore' %}active{% endif %}">
-            <i class="fas fa-compass"></i>
-            <span>探索</span>
+        <a href="{% url 'shorts' %}" class="yt-mobile-nav-item {% if request.resolver_match.url_name == 'shorts' %}active{% endif %}" data-page="shorts">
+            <div class="yt-mobile-nav-icon">
+                <i class="fas fa-film"></i>
+            </div>
+            <span class="yt-mobile-nav-text">ショート</span>
         </a>
         
         {% if user.is_authenticated %}
-            <a href="{% url 'upload_video' %}" class="yt-mobile-nav-item">
-                <i class="fas fa-plus-circle"></i>
-                <span>作成</span>
+            <a href="{% url 'subscriptions' %}" class="yt-mobile-nav-item {% if request.resolver_match.url_name == 'subscriptions' %}active{% endif %}" data-page="subscriptions">
+                <div class="yt-mobile-nav-icon">
+                    <i class="fas fa-play-circle"></i>
+                    {% if unread_notifications_count > 0 %}
+                        <span class="yt-mobile-nav-badge">{{ unread_notifications_count }}</span>
+                    {% endif %}
+                </div>
+                <span class="yt-mobile-nav-text">登録</span>
             </a>
             
-            <a href="{% url 'subscriptions' %}" class="yt-mobile-nav-item {% if request.resolver_match.url_name == 'subscriptions' %}active{% endif %}">
-                <i class="fas fa-play-circle"></i>
-                <span>登録</span>
-            </a>
-            
-            <a href="{% url 'channel_detail' user.username %}" class="yt-mobile-nav-item">
-                <i class="fas fa-user-circle"></i>
-                <span>あなた</span>
+            <a href="#" class="yt-mobile-nav-item" onclick="showMobileLibrarySheet(); return false;" data-page="library">
+                <div class="yt-mobile-nav-icon">
+                    <i class="fas fa-folder"></i>
+                </div>
+                <span class="yt-mobile-nav-text">ライブラリ</span>
             </a>
         {% else %}
-            <a href="{% url 'shorts' %}" class="yt-mobile-nav-item {% if request.resolver_match.url_name == 'shorts' %}active{% endif %}">
-                <i class="fas fa-film"></i>
-                <span>ショート</span>
+            <a href="{% url 'explore' %}" class="yt-mobile-nav-item {% if request.resolver_match.url_name == 'explore' %}active{% endif %}" data-page="explore">
+                <div class="yt-mobile-nav-icon">
+                    <i class="fas fa-compass"></i>
+                </div>
+                <span class="yt-mobile-nav-text">探索</span>
             </a>
             
-            <a href="{% url 'login' %}" class="yt-mobile-nav-item">
-                <i class="fas fa-sign-in-alt"></i>
-                <span>ログイン</span>
+            <a href="{% url 'login' %}" class="yt-mobile-nav-item" data-page="login">
+                <div class="yt-mobile-nav-icon">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <span class="yt-mobile-nav-text">ログイン</span>
             </a>
         {% endif %}
     </div>
 </nav>
 
-<!-- Mobile Menu Overlay -->
-<div class="yt-mobile-menu-overlay" onclick="if(window.sidebarComponent) window.sidebarComponent.closeSidebar()"></div>
+<!-- Floating Action Button for Upload -->
+{% if user.is_authenticated %}
+<a href="{% url 'upload_video' %}" class="yt-mobile-fab" id="mobileFab">
+    <i class="fas fa-plus"></i>
+</a>
+{% endif %}
+
+<!-- Mobile Library Sheet -->
+{% if user.is_authenticated %}
+<div class="yt-mobile-sheet" id="mobileLibrarySheet">
+    <div class="yt-mobile-sheet-handle"></div>
+    <div class="yt-mobile-sheet-content">
+        <h3 style="color: var(--yt-text); margin-bottom: 20px;">ライブラリ</h3>
+        
+        <a href="{% url 'history' %}" class="yt-mobile-sheet-item">
+            <i class="fas fa-history"></i>
+            <span>履歴</span>
+        </a>
+        
+        <a href="{% url 'your_videos' %}" class="yt-mobile-sheet-item">
+            <i class="fas fa-video"></i>
+            <span>あなたの動画</span>
+        </a>
+        
+        <a href="{% url 'watch_later' %}" class="yt-mobile-sheet-item">
+            <i class="fas fa-clock"></i>
+            <span>後で見る</span>
+        </a>
+        
+        <a href="{% url 'liked_videos' %}" class="yt-mobile-sheet-item">
+            <i class="fas fa-thumbs-up"></i>
+            <span>高評価した動画</span>
+        </a>
+        
+        <div style="margin: 20px 0; border-top: 1px solid var(--yt-border);"></div>
+        
+        <a href="{% url 'channel_detail' user.username %}" class="yt-mobile-sheet-item">
+            <i class="fas fa-user"></i>
+            <span>チャンネル</span>
+        </a>
+        
+        <a href="{% url 'account_settings' %}" class="yt-mobile-sheet-item">
+            <i class="fas fa-cog"></i>
+            <span>設定</span>
+        </a>
+    </div>
+</div>
+{% endif %}
+
+<style>
+.yt-mobile-sheet-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 8px;
+    color: var(--yt-text);
+    text-decoration: none;
+    transition: background-color 0.2s;
+    border-radius: 8px;
+    font-size: 16px;
+}
+
+.yt-mobile-sheet-item:hover {
+    background-color: var(--yt-hover);
+}
+
+.yt-mobile-sheet-item i {
+    width: 24px;
+    font-size: 20px;
+    color: var(--yt-text-secondary);
+}
+</style>
+
+<script>
+// Mobile navigation enhancements
+document.addEventListener('DOMContentLoaded', function() {
+    // Add ripple effect to nav items
+    const navItems = document.querySelectorAll('.yt-mobile-nav-item');
+    navItems.forEach(item => {
+        item.addEventListener('click', function(e) {
+            // Haptic feedback simulation
+            if ('vibrate' in navigator) {
+                navigator.vibrate(10);
+            }
+            
+            // Visual feedback
+            const icon = this.querySelector('.yt-mobile-nav-icon');
+            icon.style.transform = 'scale(0.85)';
+            setTimeout(() => {
+                icon.style.transform = '';
+            }, 200);
+        });
+    });
+    
+    // FAB animation on scroll
+    let lastScrollTop = 0;
+    let fabHidden = false;
+    const fab = document.getElementById('mobileFab');
+    
+    if (fab) {
+        window.addEventListener('scroll', function() {
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            
+            if (scrollTop > lastScrollTop && !fabHidden && scrollTop > 100) {
+                // Scrolling down - hide FAB
+                fab.style.transform = 'translateX(100px)';
+                fabHidden = true;
+            } else if (scrollTop < lastScrollTop && fabHidden) {
+                // Scrolling up - show FAB
+                fab.style.transform = 'translateX(0)';
+                fabHidden = false;
+            }
+            
+            lastScrollTop = scrollTop;
+        });
+    }
+});
+
+// Show mobile library sheet
+function showMobileLibrarySheet() {
+    const sheet = document.getElementById('mobileLibrarySheet');
+    const overlay = document.createElement('div');
+    overlay.className = 'yt-mobile-sheet-overlay';
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 2000;
+        opacity: 0;
+        transition: opacity 0.3s;
+    `;
+    
+    document.body.appendChild(overlay);
+    
+    setTimeout(() => {
+        overlay.style.opacity = '1';
+        sheet.style.display = 'block';
+        setTimeout(() => {
+            sheet.classList.add('show');
+        }, 10);
+    }, 10);
+    
+    // Close on overlay click
+    overlay.addEventListener('click', function() {
+        sheet.classList.remove('show');
+        overlay.style.opacity = '0';
+        setTimeout(() => {
+            sheet.style.display = 'none';
+            document.body.removeChild(overlay);
+        }, 300);
+    });
+    
+    // Swipe down to close
+    let startY = 0;
+    let currentY = 0;
+    
+    const handle = sheet.querySelector('.yt-mobile-sheet-handle');
+    handle.addEventListener('touchstart', function(e) {
+        startY = e.touches[0].clientY;
+    });
+    
+    handle.addEventListener('touchmove', function(e) {
+        currentY = e.touches[0].clientY;
+        const deltaY = currentY - startY;
+        
+        if (deltaY > 0) {
+            sheet.style.transform = `translateY(${deltaY}px)`;
+        }
+    });
+    
+    handle.addEventListener('touchend', function(e) {
+        const deltaY = currentY - startY;
+        
+        if (deltaY > 100) {
+            // Close sheet
+            sheet.classList.remove('show');
+            overlay.style.opacity = '0';
+            setTimeout(() => {
+                sheet.style.display = 'none';
+                sheet.style.transform = '';
+                document.body.removeChild(overlay);
+            }, 300);
+        } else {
+            // Reset position
+            sheet.style.transform = '';
+        }
+    });
+}
+
+// Make function globally available
+window.showMobileLibrarySheet = showMobileLibrarySheet;
+</script>
