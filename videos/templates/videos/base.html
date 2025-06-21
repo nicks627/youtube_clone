@@ -1474,27 +1474,53 @@
             }
         }
 
-        // Auto-hide sidebar on mobile
+        // Auto-hide sidebar on mobile and handle orientation changes
         function handleResize() {
             const sidebar = document.getElementById('sidebar');
             const main = document.getElementById('main');
             const overlay = document.querySelector('.yt-mobile-menu-overlay');
+            const isLandscape = window.matchMedia("(orientation: landscape)").matches;
+            const isMobile = window.innerWidth <= 896;
+            const isTablet = window.innerWidth > 768 && window.innerWidth <= 1024;
             
-            if (window.innerWidth <= 1024) {
-                // Mobile: ensure sidebar is hidden by default
+            if (isMobile && !isLandscape) {
+                // Mobile portrait: hide sidebar
+                sidebar.style.display = 'none';
+                main.classList.remove('expanded');
+                if (overlay) overlay.classList.remove('show');
+            } else if (isMobile && isLandscape) {
+                // Mobile landscape: show sidebar
+                sidebar.style.display = 'block';
+                sidebar.classList.remove('collapsed');
+                sidebar.classList.remove('show');
+                main.classList.remove('expanded');
+                if (overlay) overlay.classList.remove('show');
+            } else if (isTablet && !isLandscape) {
+                // Tablet portrait: hide sidebar
+                sidebar.style.display = 'none';
+                main.classList.remove('expanded');
+                if (overlay) overlay.classList.remove('show');
+            } else {
+                // Desktop or tablet landscape: show sidebar
+                sidebar.style.display = 'block';
+                sidebar.classList.remove('show');
                 sidebar.classList.remove('collapsed');
                 main.classList.remove('expanded');
-                if (!sidebar.classList.contains('show')) {
-                    overlay.classList.remove('show');
-                }
-            } else {
-                // Desktop: show sidebar by default
-                sidebar.classList.remove('show');
-                overlay.classList.remove('show');
+                if (overlay) overlay.classList.remove('show');
             }
         }
 
+        // Listen for orientation changes
         window.addEventListener('resize', handleResize);
+        window.addEventListener('orientationchange', function() {
+            setTimeout(handleResize, 100); // Small delay to ensure accurate dimensions
+        });
+        
+        // Check orientation on load
+        if (screen && screen.orientation) {
+            screen.orientation.addEventListener('change', handleResize);
+        }
+        
         handleResize(); // Initial check
         
         // Sidebar folder toggle functionality

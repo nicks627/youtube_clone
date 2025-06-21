@@ -29,11 +29,18 @@ body {
     margin-left: 240px;
     padding: 20px;
     min-height: calc(100vh - 56px);
+    transition: margin 0.3s ease;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1024px) and (orientation: portrait) {
     .yt-main-content {
         margin-left: 0;
+    }
+}
+
+@media (max-width: 896px) and (orientation: landscape) {
+    .yt-main-content {
+        margin-left: 240px;
     }
 }
 

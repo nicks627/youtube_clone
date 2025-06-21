@@ -219,8 +219,8 @@
     padding: 0 16px 24px;
 }
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
+/* Responsive adjustments - Portrait orientation */
+@media (max-width: 768px) and (orientation: portrait) {
     /* Show mobile navigation */
     .yt-mobile-nav {
         display: block;
@@ -240,7 +240,7 @@
         margin-left: 0 !important;
     }
     
-    /* Hide sidebar completely on mobile */
+    /* Hide sidebar completely on mobile portrait */
     .yt-sidebar {
         display: none !important;
     }
@@ -277,6 +277,96 @@
     /* Adjust main content top margin */
     .yt-main {
         margin-top: 48px;
+    }
+}
+
+/* Landscape orientation - Show sidebar */
+@media (max-width: 896px) and (orientation: landscape) {
+    /* Hide mobile navigation in landscape */
+    .yt-mobile-nav {
+        display: none !important;
+    }
+    
+    /* Hide FAB in landscape */
+    .yt-mobile-fab {
+        display: none !important;
+    }
+    
+    /* Show sidebar in landscape */
+    .yt-sidebar {
+        display: block !important;
+        transform: translateX(0) !important;
+        width: 240px;
+    }
+    
+    /* Show menu button in landscape */
+    .yt-menu-button {
+        display: flex !important;
+    }
+    
+    /* Show header search in landscape */
+    .yt-header-center {
+        display: flex !important;
+    }
+    
+    /* Show upload button in header */
+    .yt-upload-button {
+        display: inline-flex !important;
+    }
+    
+    /* Adjust main content for sidebar */
+    .yt-main-content {
+        margin-left: 240px !important;
+        margin-bottom: 0;
+        padding: 20px;
+    }
+    
+    /* Normal header height */
+    .yt-header {
+        height: 56px;
+        padding: 0 16px;
+    }
+    
+    /* Show logo text in landscape */
+    .yt-logo-text {
+        display: block !important;
+        font-size: 20px;
+    }
+    
+    /* Adjust main content top margin */
+    .yt-main {
+        margin-top: 56px;
+    }
+}
+
+/* Tablets in portrait mode */
+@media (min-width: 769px) and (max-width: 1024px) and (orientation: portrait) {
+    /* Show mobile navigation on tablets in portrait */
+    .yt-mobile-nav {
+        display: block;
+    }
+    
+    /* Show FAB on tablets */
+    .yt-mobile-fab {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    /* Hide sidebar on tablets in portrait */
+    .yt-sidebar {
+        display: none !important;
+    }
+    
+    /* Adjust content margins */
+    .yt-main-content {
+        margin-bottom: 64px;
+        margin-left: 0 !important;
+    }
+    
+    /* Hide menu button */
+    .yt-menu-button {
+        display: none;
     }
 }
 
