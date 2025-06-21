@@ -3,7 +3,7 @@ services:
     name: youtube-clone
     env: python
     buildCommand: "./build.sh"
-    startCommand: "gunicorn youtube_clone.wsgi:application"
+    startCommand: "gunicorn youtube_clone.wsgi:application --host 0.0.0.0 --port $PORT"
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.0
