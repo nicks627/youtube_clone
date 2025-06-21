@@ -9,14 +9,80 @@
 {% endblock %}
 
 {% block content %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/components/search.css' %}">
+
 <div class="yt-search-results-container">
-    <div class="yt-search-header">
-        {% if search_query %}
-        <h1 class="yt-search-title">"{{ search_query }}" の検索結果</h1>
-        <p class="yt-search-subtitle">約 {{ results_count }} 件の結果</p>
-        {% else %}
-        <h1 class="yt-search-title">検索結果</h1>
-        {% endif %}
+    <!-- Search Filters -->
+    <div class="yt-search-filters">
+        <div class="yt-search-filters-header">
+            <h2 class="yt-search-filters-title">フィルタ</h2>
+            <button class="yt-search-filters-toggle">
+                <i class="fas fa-chevron-down"></i>
+            </button>
+        </div>
+        <div class="yt-search-filters-content" style="display: none;">
+            <div class="yt-search-filter-group">
+                <label class="yt-search-filter-label">並び替え</label>
+                <select name="sort_by" class="yt-search-filter-select">
+                    <option value="relevance" {% if filters.sort_by == 'relevance' %}selected{% endif %}>関連度</option>
+                    <option value="upload_date" {% if filters.sort_by == 'upload_date' %}selected{% endif %}>アップロード日</option>
+                    <option value="view_count" {% if filters.sort_by == 'view_count' %}selected{% endif %}>再生回数</option>
+                    <option value="rating" {% if filters.sort_by == 'rating' %}selected{% endif %}>評価</option>
+                </select>
+            </div>
+            
+            <div class="yt-search-filter-group">
+                <label class="yt-search-filter-label">アップロード日</label>
+                <select name="upload_date" class="yt-search-filter-select">
+                    <option value="">いつでも</option>
+                    <option value="hour" {% if filters.upload_date == 'hour' %}selected{% endif %}>1時間以内</option>
+                    <option value="today" {% if filters.upload_date == 'today' %}selected{% endif %}>今日</option>
+                    <option value="week" {% if filters.upload_date == 'week' %}selected{% endif %}>今週</option>
+                    <option value="month" {% if filters.upload_date == 'month' %}selected{% endif %}>今月</option>
+                    <option value="year" {% if filters.upload_date == 'year' %}selected{% endif %}>今年</option>
+                </select>
+            </div>
+            
+            <div class="yt-search-filter-group">
+                <label class="yt-search-filter-label">長さ</label>
+                <select name="duration" class="yt-search-filter-select">
+                    <option value="">すべて</option>
+                    <option value="short" {% if filters.duration == 'short' %}selected{% endif %}>短い（4分未満）</option>
+                    <option value="medium" {% if filters.duration == 'medium' %}selected{% endif %}>中程度（4-20分）</option>
+                    <option value="long" {% if filters.duration == 'long' %}selected{% endif %}>長い（20分以上）</option>
+                </select>
+            </div>
+            
+            <div class="yt-search-filter-group">
+                <label class="yt-search-filter-label">タイプ</label>
+                <select name="type" class="yt-search-filter-select">
+                    <option value="">すべて</option>
+                    <option value="regular" {% if filters.type == 'regular' %}selected{% endif %}>動画</option>
+                    <option value="shorts" {% if filters.type == 'shorts' %}selected{% endif %}>ショート</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Results Header -->
+    <div class="yt-search-results-header">
+        <div class="yt-search-results-info">
+            {% if search_query %}
+            <h1 class="yt-search-title">"{{ search_query }}" の検索結果</h1>
+            <p class="yt-search-subtitle">約 {{ results_count }} 件の結果</p>
+            {% else %}
+            <h1 class="yt-search-title">検索結果</h1>
+            {% endif %}
+        </div>
+        
+        <!-- Quick Sort Dropdown -->
+        <select class="yt-search-sort-dropdown" onchange="quickSort(this.value)">
+            <option value="relevance" {% if filters.sort_by == 'relevance' %}selected{% endif %}>関連度</option>
+            <option value="upload_date" {% if filters.sort_by == 'upload_date' %}selected{% endif %}>新しい順</option>
+            <option value="view_count" {% if filters.sort_by == 'view_count' %}selected{% endif %}>再生回数順</option>
+            <option value="rating" {% if filters.sort_by == 'rating' %}selected{% endif %}>評価順</option>
+        </select>
     </div>
 
     {% if videos %}
@@ -360,6 +426,15 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="{% static 'js/components/search.js' %}"></script>
+<script>
+// Quick sort function
+function quickSort(sortBy) {
+    const params = new URLSearchParams(window.location.search);
+    params.set('sort_by', sortBy);
+    window.location.search = params.toString();
+}
+</script>
 <script>
 async function addToWatchLater(videoId) {
     if (!{{ user.is_authenticated|yesno:"true,false" }}) {

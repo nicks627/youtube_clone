@@ -41,6 +41,10 @@ urlpatterns = [
     # Search
     path('search/', views.search_videos, name='search_videos'),
     
+    # Search API endpoints
+    path('api/search/suggestions/', views.search_suggestions, name='search_suggestions'),
+    path('api/search/clear-history/', views.clear_search_history, name='clear_search_history'),
+    
     # Comments and likes
     path('api/comments/', views.get_comments, name='get_comments'),
     path('api/comments/add/', views.add_comment, name='add_comment'),

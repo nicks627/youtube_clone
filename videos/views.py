@@ -17,6 +17,7 @@ import json
 from .models import Video, Channel, Subscription, SubscriptionFolder, UserSettings, WatchHistory, WatchLater, Comment, VideoLike, PaymentSettings, PaidContent, Purchase, Donation
 from .forms import VideoUploadForm
 from .notification_service import NotificationService
+from .search_utils import SearchEnhancer, SearchHistory
 
 def video_list(request):
     # Get regular videos (exclude shorts)
@@ -707,17 +708,33 @@ def search_videos(request):
     if not query:
         return redirect('video_list')
     
-    # Search in video titles, descriptions, and uploader usernames
-    videos_list = Video.objects.select_related('uploaded_by').filter(
-        Q(title__icontains=query) |
-        Q(description__icontains=query) |
-        Q(uploaded_by__username__icontains=query)
-    ).distinct().order_by('-uploaded_at')
+    # Add to search history
+    if request.user.is_authenticated:
+        SearchHistory.add_search(request, query)
+    
+    # Get filters from request
+    filters = {
+        'sort_by': request.GET.get('sort_by', 'relevance'),
+        'upload_date': request.GET.get('upload_date'),
+        'duration': request.GET.get('duration'),
+        'type': request.GET.get('type'),
+        'genre': request.GET.get('genre'),
+    }
+    
+    # Remove empty filters
+    filters = {k: v for k, v in filters.items() if v}
+    
+    # Enhanced search with filters
+    videos_list = SearchEnhancer.search_videos(query, filters)
     
     # Pagination
     paginator = Paginator(videos_list, 12)  # Show 12 results per page
     page_number = request.GET.get('page')
     videos = paginator.get_page(page_number)
+    
+    # Get search history and trending searches
+    search_history = SearchHistory.get_history(request) if request.user.is_authenticated else []
+    trending_searches = SearchEnhancer.get_trending_searches(5)
     
     context = {
         'videos': videos,
@@ -725,6 +742,12 @@ def search_videos(request):
         'results_count': paginator.count,
         'is_paginated': videos.has_other_pages(),
         'page_obj': videos,
+        'filters': filters,
+        'sort_options': SearchEnhancer.SORT_OPTIONS,
+        'upload_date_filters': SearchEnhancer.UPLOAD_DATE_FILTERS,
+        'duration_filters': SearchEnhancer.DURATION_FILTERS,
+        'search_history': search_history,
+        'trending_searches': trending_searches,
     }
     
     # Add subscription data for sidebar
@@ -732,6 +755,54 @@ def search_videos(request):
         context.update(get_sidebar_context(request.user))
     
     return render(request, 'videos/search_results.html', context)
+
+@login_required
+def search_suggestions(request):
+    """Get search suggestions based on query"""
+    query = request.GET.get('q', '').strip()
+    
+    if not query:
+        return JsonResponse({'suggestions': []})
+    
+    try:
+        # Get search suggestions from SearchEnhancer
+        suggestions = SearchEnhancer.get_search_suggestions(query)
+        
+        # Also get user's recent search history that matches the query
+        if request.user.is_authenticated:
+            search_history = SearchHistory.get_history(request)
+            # Filter history items that start with the query
+            history_suggestions = [
+                item for item in search_history 
+                if item.lower().startswith(query.lower())
+            ][:3]  # Limit to 3 history suggestions
+            
+            # Combine and deduplicate suggestions
+            all_suggestions = list(dict.fromkeys(history_suggestions + suggestions))[:10]
+        else:
+            all_suggestions = suggestions[:10]
+        
+        return JsonResponse({
+            'suggestions': all_suggestions,
+            'query': query
+        })
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+@login_required
+@require_POST
+def clear_search_history(request):
+    """Clear user's search history"""
+    try:
+        # Clear search history for the authenticated user
+        SearchHistory.clear_history(request)
+        
+        return JsonResponse({
+            'success': True,
+            'message': '検索履歴を削除しました'
+        })
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
 
 def get_comments(request):
     """動画のコメントを取得するAPI"""
