@@ -1,0 +1,44 @@
+<!-- Mobile Bottom Navigation -->
+<nav class="yt-mobile-nav">
+    <div class="yt-mobile-nav-items">
+        <a href="{% url 'video_list' %}" class="yt-mobile-nav-item {% if request.resolver_match.url_name == 'video_list' %}active{% endif %}">
+            <i class="fas fa-home"></i>
+            <span>ホーム</span>
+        </a>
+        
+        <a href="{% url 'explore' %}" class="yt-mobile-nav-item {% if request.resolver_match.url_name == 'explore' %}active{% endif %}">
+            <i class="fas fa-compass"></i>
+            <span>探索</span>
+        </a>
+        
+        {% if user.is_authenticated %}
+            <a href="{% url 'upload_video' %}" class="yt-mobile-nav-item">
+                <i class="fas fa-plus-circle"></i>
+                <span>作成</span>
+            </a>
+            
+            <a href="{% url 'subscriptions' %}" class="yt-mobile-nav-item {% if request.resolver_match.url_name == 'subscriptions' %}active{% endif %}">
+                <i class="fas fa-play-circle"></i>
+                <span>登録</span>
+            </a>
+            
+            <a href="{% url 'channel_detail' user.username %}" class="yt-mobile-nav-item">
+                <i class="fas fa-user-circle"></i>
+                <span>あなた</span>
+            </a>
+        {% else %}
+            <a href="{% url 'shorts' %}" class="yt-mobile-nav-item {% if request.resolver_match.url_name == 'shorts' %}active{% endif %}">
+                <i class="fas fa-film"></i>
+                <span>ショート</span>
+            </a>
+            
+            <a href="{% url 'login' %}" class="yt-mobile-nav-item">
+                <i class="fas fa-sign-in-alt"></i>
+                <span>ログイン</span>
+            </a>
+        {% endif %}
+    </div>
+</nav>
+
+<!-- Mobile Menu Overlay -->
+<div class="yt-mobile-menu-overlay" onclick="if(window.sidebarComponent) window.sidebarComponent.closeSidebar()"></div>

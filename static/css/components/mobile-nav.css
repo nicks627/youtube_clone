@@ -1,0 +1,136 @@
+/* Mobile Navigation Styles */
+
+/* Bottom Navigation for Mobile */
+.yt-mobile-nav {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 56px;
+    background-color: var(--yt-bg);
+    border-top: 1px solid var(--yt-border);
+    z-index: 2000;
+}
+
+.yt-mobile-nav-items {
+    display: flex;
+    height: 100%;
+    align-items: center;
+    justify-content: space-around;
+}
+
+.yt-mobile-nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    color: var(--yt-text-secondary);
+    text-decoration: none;
+    font-size: 10px;
+    transition: color 0.2s;
+    padding: 8px 0;
+}
+
+.yt-mobile-nav-item:hover,
+.yt-mobile-nav-item.active {
+    color: var(--yt-text);
+}
+
+.yt-mobile-nav-item.active {
+    color: var(--yt-red);
+}
+
+.yt-mobile-nav-item i {
+    font-size: 20px;
+}
+
+/* Mobile Menu Overlay */
+.yt-mobile-menu-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+}
+
+.yt-mobile-menu-overlay.show {
+    display: block;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    /* Show mobile navigation */
+    .yt-mobile-nav {
+        display: block;
+    }
+    
+    /* Adjust main content for bottom nav */
+    .yt-main-content {
+        margin-bottom: 56px;
+        padding: 12px;
+    }
+    
+    /* Make header menu button more prominent */
+    .yt-menu-button {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    /* Hide desktop navigation items */
+    .yt-header-center {
+        display: none;
+    }
+    
+    /* Simplify header */
+    .yt-header {
+        padding: 0 12px;
+    }
+    
+    .yt-header-left {
+        gap: 12px;
+    }
+    
+    .yt-logo-text {
+        font-size: 18px;
+    }
+    
+    /* Adjust sidebar for mobile */
+    .yt-sidebar {
+        width: 280px;
+        max-width: 85vw;
+    }
+    
+    /* Show overlay when sidebar is open */
+    .yt-sidebar.show ~ .yt-mobile-menu-overlay {
+        display: block;
+    }
+}
+
+@media (max-width: 480px) {
+    /* Even smaller screens */
+    .yt-logo-text {
+        display: none;
+    }
+    
+    .yt-header-right {
+        gap: 4px;
+    }
+    
+    .yt-upload-button {
+        padding: 8px 12px;
+        font-size: 12px;
+    }
+    
+    .yt-upload-button i {
+        font-size: 14px;
+    }
+}

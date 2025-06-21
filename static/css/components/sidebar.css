@@ -175,8 +175,10 @@
 
 @media (max-width: 768px) {
     .yt-sidebar {
-        width: 100vw;
-        background-color: rgba(0, 0, 0, 0.9);
+        width: 280px;
+        max-width: 85vw;
+        background-color: var(--yt-bg);
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
     }
 }
 
