@@ -1,0 +1,1851 @@
+{% extends 'videos/base.html' %}
+
+{% block title %}{{ video.title }} - YouTube Clone{% endblock %}
+
+{% block content %}
+<div class="yt-watch-container">
+    <div class="yt-watch-primary">
+        <!-- Video Player -->
+        <div class="yt-video-player-container">
+            <div class="yt-video-player">
+                <video id="videoPlayer" controls>
+                    {% if video.video_file %}
+                        <source src="{{ video.video_file.url }}" type="video/mp4">
+                    {% endif %}
+                    お使いのブラウザは動画タグをサポートしていません。
+                </video>
+            </div>
+            
+            <!-- Video Controls -->
+            <div class="yt-video-controls">
+                <div class="yt-speed-control">
+                    <label for="playbackRate">
+                        <i class="fas fa-tachometer-alt"></i>
+                    </label>
+                    <select id="playbackRate" class="form-select">
+                        <option value="0.25" {% if default_playback_speed == 0.25 %}selected{% endif %}>0.25x</option>
+                        <option value="0.5" {% if default_playback_speed == 0.5 %}selected{% endif %}>0.5x</option>
+                        <option value="0.75" {% if default_playback_speed == 0.75 %}selected{% endif %}>0.75x</option>
+                        <option value="1" {% if default_playback_speed == 1.0 %}selected{% endif %}>標準</option>
+                        <option value="1.25" {% if default_playback_speed == 1.25 %}selected{% endif %}>1.25x</option>
+                        <option value="1.5" {% if default_playback_speed == 1.5 %}selected{% endif %}>1.5x</option>
+                        <option value="1.75" {% if default_playback_speed == 1.75 %}selected{% endif %}>1.75x</option>
+                        <option value="2" {% if default_playback_speed == 2.0 %}selected{% endif %}>2x</option>
+                        <option value="2.5" {% if default_playback_speed == 2.5 %}selected{% endif %}>2.5x</option>
+                        <option value="3" {% if default_playback_speed == 3.0 %}selected{% endif %}>3x</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Video Info -->
+        <div class="yt-video-info-container">
+            <h1 class="yt-video-title">{{ video.title }}</h1>
+            
+            <div class="yt-video-meta-container">
+                <div class="yt-video-meta-left">
+                    <div class="yt-video-stats">
+                        {{ video.views|floatformat:0 }} 回視聴 • {{ video.uploaded_at|date:"Y年m月d日" }}
+                    </div>
+                </div>
+                <div class="yt-video-meta-right">
+                    <div class="yt-video-actions">
+                        {% if user.is_authenticated %}
+                        <button class="yt-action-button {% if user_like.like_type == 1 %}yt-action-active{% endif %}" onclick="toggleLike({{ video.id }}, 1)">
+                            <i class="fas fa-thumbs-up"></i>
+                            <span id="like-count">{{ video.get_like_count }}</span>
+                        </button>
+                        <button class="yt-action-button {% if user_like.like_type == -1 %}yt-action-active{% endif %}" onclick="toggleLike({{ video.id }}, -1)">
+                            <i class="fas fa-thumbs-down"></i>
+                            <span id="dislike-count">{{ video.get_dislike_count }}</span>
+                        </button>
+                        {% else %}
+                        <button class="yt-action-button" onclick="alert('ログインが必要です')">
+                            <i class="fas fa-thumbs-up"></i>
+                            <span>{{ video.get_like_count }}</span>
+                        </button>
+                        <button class="yt-action-button" onclick="alert('ログインが必要です')">
+                            <i class="fas fa-thumbs-down"></i>
+                            <span>{{ video.get_dislike_count }}</span>
+                        </button>
+                        {% endif %}
+                        <button class="yt-action-button" onclick="openShareModal()">
+                            <i class="fas fa-share"></i>
+                            <span>共有</span>
+                        </button>
+                        {% if user.is_authenticated %}
+                        <button class="yt-action-button" onclick="toggleWatchLater({{ video.id }})">
+                            <i class="fas fa-clock"></i>
+                            <span>後で見る</span>
+                        </button>
+                        {% else %}
+                        <button class="yt-action-button" onclick="alert('ログインが必要です')">
+                            <i class="fas fa-clock"></i>
+                            <span>後で見る</span>
+                        </button>
+                        {% endif %}
+                        {% if user.is_authenticated %}
+                        <button class="yt-action-button yt-donation-button" onclick="openDonationModal()">
+                            <i class="fas fa-gift"></i>
+                            <span>投げ銭</span>
+                        </button>
+                        {% else %}
+                        <button class="yt-action-button" onclick="alert('ログインが必要です')">
+                            <i class="fas fa-gift"></i>
+                            <span>投げ銭</span>
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Channel Info -->
+        <div class="yt-channel-info">
+            <div class="yt-channel-avatar">
+                {% if channel.avatar %}
+                    <img src="{{ channel.avatar.url }}" alt="{{ channel.name }}">
+                {% else %}
+                    {{ channel.name|first|upper }}
+                {% endif %}
+            </div>
+            <div class="yt-channel-details">
+                <div class="yt-channel-name">
+                    <a href="{% url 'channel_detail' channel.user.username %}" class="yt-channel-link">
+                        {{ channel.name }}
+                    </a>
+                </div>
+                <div class="yt-channel-subscribers">{{ channel.get_subscriber_count_display }} 人の登録者</div>
+            </div>
+            {% if user.is_authenticated and channel.user != user %}
+                <button class="yt-subscribe-button" id="subscribeBtn" onclick="toggleSubscription()">
+                    <i class="fas fa-bell" id="subscribeIcon"></i>
+                    <span id="subscribeText">{% if is_subscribed %}登録済み{% else %}チャンネル登録{% endif %}</span>
+                </button>
+            {% elif not user.is_authenticated %}
+                <a href="#" class="yt-subscribe-button" onclick="alert('チャンネル登録にはログインが必要です')">
+                    <i class="fas fa-bell"></i>
+                    チャンネル登録
+                </a>
+            {% endif %}
+        </div>
+        
+        <!-- Video Description -->
+        {% if video.description %}
+        <div class="yt-video-description">
+            <div class="yt-description-header">
+                <span class="yt-description-snippet">{{ video.description|truncatechars:100 }}</span>
+                <button class="yt-description-toggle" onclick="toggleDescription()">
+                    <span id="descToggleText">もっと見る</span>
+                </button>
+            </div>
+            <div class="yt-description-full" id="descriptionFull" style="display: none;">
+                <div class="yt-description-content">
+                    {{ video.description|linebreaks }}
+                </div>
+                <button class="yt-description-toggle" onclick="toggleDescription()">
+                    表示を減らす
+                </button>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Comments Section -->
+        <div class="yt-comments-section">
+            <div class="yt-comments-header">
+                <h3>コメント {{ video.get_comment_count }} 件</h3>
+                <div class="yt-comments-sort">
+                    <button class="yt-sort-button">
+                        <i class="fas fa-sort"></i>
+                        並べ替え
+                    </button>
+                </div>
+            </div>
+            
+            {% if user.is_authenticated %}
+            <div class="yt-comment-composer">
+                <div class="yt-comment-avatar">
+                    {{ user.username|first|upper }}
+                </div>
+                <div class="yt-comment-input-container">
+                    <textarea id="commentInput" class="yt-comment-input" placeholder="コメントを追加..." rows="1"></textarea>
+                    <div class="yt-comment-actions" style="display: none;">
+                        <button type="button" class="yt-comment-cancel" onclick="cancelComment()">キャンセル</button>
+                        <button type="button" class="yt-comment-submit" onclick="submitComment()">コメント</button>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="yt-comment-login">
+                <p>コメントするには<a href="{% url 'login' %}">ログイン</a>してください。</p>
+            </div>
+            {% endif %}
+            
+            <div class="yt-comments-list" id="commentsList">
+                {% for comment in comments %}
+                    <div class="yt-comment-item" data-comment-id="{{ comment.id }}">
+                        <div class="yt-comment-avatar">
+                            {{ comment.user.username|first|upper }}
+                        </div>
+                        <div class="yt-comment-content">
+                            <div class="yt-comment-meta">
+                                <span class="yt-comment-author">{{ comment.user.username }}</span>
+                                <span class="yt-comment-time">{{ comment.created_at|timesince }}前</span>
+                            </div>
+                            <div class="yt-comment-text">{{ comment.content|linebreaks }}</div>
+                            <div class="yt-comment-actions-bar">
+                                <button class="yt-comment-action-btn">
+                                    <i class="fas fa-thumbs-up"></i>
+                                </button>
+                                <button class="yt-comment-action-btn">
+                                    <i class="fas fa-thumbs-down"></i>
+                                </button>
+                                {% if user.is_authenticated %}
+                                <button class="yt-comment-action-btn" onclick="showReplyInput({{ comment.id }})">
+                                    返信
+                                </button>
+                                {% if comment.user == user %}
+                                <button class="yt-comment-action-btn yt-comment-delete-btn" onclick="deleteComment({{ comment.id }})">
+                                    <i class="fas fa-trash"></i>
+                                    削除
+                                </button>
+                                {% endif %}
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Reply input (hidden by default) -->
+                            <div class="yt-reply-composer" id="replyComposer{{ comment.id }}" style="display: none;">
+                                <div class="yt-comment-avatar">
+                                    {{ user.username|first|upper }}
+                                </div>
+                                <div class="yt-reply-input-container">
+                                    <textarea class="yt-reply-input" placeholder="返信を追加..." rows="1"></textarea>
+                                    <div class="yt-reply-actions">
+                                        <button type="button" class="yt-comment-cancel" onclick="cancelReply({{ comment.id }})">キャンセル</button>
+                                        <button type="button" class="yt-comment-submit" onclick="submitReply({{ comment.id }})">返信</button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Replies -->
+                            {% for reply in comment.replies.all %}
+                                <div class="yt-comment-reply" data-comment-id="{{ reply.id }}">
+                                    <div class="yt-comment-avatar">
+                                        {{ reply.user.username|first|upper }}
+                                    </div>
+                                    <div class="yt-comment-content">
+                                        <div class="yt-comment-meta">
+                                            <span class="yt-comment-author">{{ reply.user.username }}</span>
+                                            <span class="yt-comment-time">{{ reply.created_at|timesince }}前</span>
+                                        </div>
+                                        <div class="yt-comment-text">{{ reply.content|linebreaks }}</div>
+                                        {% if user.is_authenticated and reply.user == user %}
+                                        <div class="yt-comment-actions-bar">
+                                            <button class="yt-comment-action-btn yt-comment-delete-btn" onclick="deleteComment({{ reply.id }})">
+                                                <i class="fas fa-trash"></i>
+                                                削除
+                                            </button>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="yt-no-comments">
+                        <p>まだコメントはありません。最初にコメントしてみませんか？</p>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Related Videos Sidebar -->
+    <div class="yt-watch-secondary">
+        <div class="yt-related-header">
+            <h3>次の動画</h3>
+        </div>
+        <div class="yt-related-videos">
+            {% for related_video in related_videos %}
+                <div class="yt-related-video" onclick="location.href='{% url 'video_detail' related_video.pk %}'">
+                    <div class="yt-related-thumbnail">
+                        {% if related_video.thumbnail %}
+                            <img src="{{ related_video.thumbnail.url }}" alt="{{ related_video.title }}">
+                        {% else %}
+                            <div class="yt-related-placeholder">
+                                <i class="fas fa-play"></i>
+                            </div>
+                        {% endif %}
+                        <div class="yt-related-duration">8:42</div>
+                    </div>
+                    <div class="yt-related-info">
+                        <h4 class="yt-related-title">{{ related_video.title }}</h4>
+                        <div class="yt-related-channel">{{ related_video.uploaded_by.username }}</div>
+                        <div class="yt-related-meta">
+                            {{ related_video.views|floatformat:0 }} 回視聴 • {{ related_video.uploaded_at|timesince }}前
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="text-center py-4">
+                    <p class="text-muted">関連動画はありません</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Share Modal -->
+<div class="yt-modal" id="shareModal">
+    <div class="yt-modal-content">
+        <div class="yt-modal-header">
+            <h3>動画を共有</h3>
+            <button class="yt-modal-close" onclick="closeShareModal()">&times;</button>
+        </div>
+        <div class="yt-modal-body">
+            <div class="yt-share-options">
+                <h4>SNSで共有</h4>
+                <div class="yt-share-buttons">
+                    <a href="#" id="shareTwitter" class="yt-share-btn yt-share-twitter" target="_blank">
+                        <i class="fab fa-twitter"></i>
+                        Twitter
+                    </a>
+                    <a href="#" id="shareFacebook" class="yt-share-btn yt-share-facebook" target="_blank">
+                        <i class="fab fa-facebook"></i>
+                        Facebook
+                    </a>
+                    <a href="#" id="shareLine" class="yt-share-btn yt-share-line" target="_blank">
+                        <i class="fab fa-line"></i>
+                        LINE
+                    </a>
+                </div>
+                
+                <h4>リンクをコピー</h4>
+                <div class="yt-share-link">
+                    <input type="text" id="shareLink" value="{{ request.build_absolute_uri }}" readonly>
+                    <button onclick="copyShareLink()" class="yt-copy-btn">
+                        <i class="fas fa-copy"></i>
+                        コピー
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Donation Modal -->
+<div class="yt-modal" id="donationModal">
+    <div class="yt-modal-content">
+        <div class="yt-modal-header">
+            <h3>{{ video.uploaded_by.username }}さんに投げ銭</h3>
+            <button class="yt-modal-close" onclick="closeDonationModal()">&times;</button>
+        </div>
+        <div class="yt-modal-body">
+            <div class="yt-donation-options">
+                <p>クリエイターを支援して、素晴らしいコンテンツ作成を応援しましょう！</p>
+                
+                <div class="yt-donation-amounts">
+                    <h4>金額を選択</h4>
+                    <div class="yt-amount-buttons">
+                        <button class="yt-amount-btn" onclick="selectAmount(100)">¥100</button>
+                        <button class="yt-amount-btn" onclick="selectAmount(300)">¥300</button>
+                        <button class="yt-amount-btn" onclick="selectAmount(500)">¥500</button>
+                        <button class="yt-amount-btn" onclick="selectAmount(1000)">¥1,000</button>
+                        <button class="yt-amount-btn" onclick="selectAmount(3000)">¥3,000</button>
+                        <button class="yt-amount-btn" onclick="selectAmount(5000)">¥5,000</button>
+                    </div>
+                    
+                    <div class="yt-custom-amount">
+                        <input type="number" id="customAmount" placeholder="カスタム金額" min="100" max="100000">
+                        <span>円</span>
+                    </div>
+                </div>
+                
+                <div class="yt-donation-message">
+                    <h4>メッセージ（任意）</h4>
+                    <textarea id="donationMessage" placeholder="応援メッセージを入力してください..." maxlength="200"></textarea>
+                </div>
+                
+                <div class="yt-donation-actions">
+                    <button class="yt-btn yt-btn-primary" onclick="processDonation()">
+                        <i class="fas fa-heart"></i>
+                        投げ銭する
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.yt-watch-container {
+    display: flex;
+    gap: 24px;
+    max-width: 1280px;
+    margin: 0 auto;
+}
+
+.yt-watch-primary {
+    flex: 1;
+    min-width: 0;
+}
+
+.yt-watch-secondary {
+    width: 402px;
+    flex-shrink: 0;
+}
+
+.yt-video-player-container {
+    margin-bottom: 20px;
+}
+
+.yt-video-player {
+    position: relative;
+    background: #000;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.yt-video-player video {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16/9;
+    display: block;
+}
+
+.yt-video-controls {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 12px 0;
+}
+
+.yt-speed-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.yt-speed-control label {
+    color: var(--yt-text-secondary);
+    margin: 0;
+}
+
+.yt-speed-control select {
+    background-color: var(--yt-card-bg);
+    border: 1px solid var(--yt-border);
+    color: var(--yt-text);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.yt-video-info-container {
+    margin-bottom: 24px;
+}
+
+.yt-video-title {
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 1.4;
+    margin: 0 0 12px 0;
+    color: var(--yt-text);
+}
+
+.yt-video-meta-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--yt-border);
+}
+
+.yt-video-stats {
+    color: var(--yt-text-secondary);
+    font-size: 14px;
+}
+
+.yt-video-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.yt-action-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: none;
+    color: var(--yt-text);
+    padding: 8px 16px;
+    border-radius: 18px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.yt-action-button:hover {
+    background-color: var(--yt-hover);
+}
+
+.yt-action-button.yt-action-active {
+    background-color: var(--yt-red);
+    color: white;
+}
+
+.yt-channel-info {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px 0;
+    border-bottom: 1px solid var(--yt-border);
+}
+
+.yt-channel-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background-color: var(--yt-red);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 18px;
+}
+
+.yt-channel-details {
+    flex: 1;
+}
+
+.yt-channel-name {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--yt-text);
+    margin-bottom: 2px;
+}
+
+.yt-channel-link {
+    color: inherit;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.yt-channel-link:hover {
+    color: var(--yt-red);
+}
+
+.yt-channel-subscribers {
+    font-size: 12px;
+    color: var(--yt-text-secondary);
+}
+
+.yt-subscribe-button {
+    background-color: var(--yt-red);
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 18px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background-color 0.2s;
+}
+
+.yt-subscribe-button:hover {
+    background-color: var(--yt-dark-red);
+}
+
+.yt-video-description {
+    margin: 20px 0;
+    padding: 16px;
+    background-color: var(--yt-card-bg);
+    border-radius: 12px;
+}
+
+.yt-description-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.yt-description-snippet {
+    flex: 1;
+    color: var(--yt-text);
+    line-height: 1.4;
+}
+
+.yt-description-toggle {
+    background: none;
+    border: none;
+    color: var(--yt-text-secondary);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.yt-description-toggle:hover {
+    color: var(--yt-text);
+}
+
+.yt-description-content {
+    color: var(--yt-text);
+    line-height: 1.4;
+    margin-bottom: 16px;
+}
+
+.yt-comments-section {
+    margin-top: 32px;
+}
+
+.yt-comments-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+
+.yt-comments-header h3 {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--yt-text);
+    margin: 0;
+}
+
+.yt-sort-button {
+    background: none;
+    border: none;
+    color: var(--yt-text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 4px;
+}
+
+.yt-sort-button:hover {
+    background-color: var(--yt-hover);
+    color: var(--yt-text);
+}
+
+.yt-comment-composer {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.yt-comment-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--yt-text-secondary);
+    font-size: 24px;
+}
+
+.yt-comment-input-container {
+    flex: 1;
+}
+
+.yt-comment-input, .yt-reply-input {
+    width: 100%;
+    background: none;
+    border: none;
+    border-bottom: 1px solid var(--yt-border);
+    color: var(--yt-text);
+    padding: 8px 0;
+    font-size: 14px;
+    outline: none;
+    resize: vertical;
+    font-family: inherit;
+}
+
+.yt-comment-input:focus, .yt-reply-input:focus {
+    border-bottom-color: var(--yt-text);
+}
+
+.yt-comment-actions, .yt-reply-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 12px;
+}
+
+.yt-comment-submit, .yt-comment-cancel {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 18px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.yt-comment-submit {
+    background-color: var(--yt-red);
+    color: white;
+}
+
+.yt-comment-submit:hover {
+    background-color: var(--yt-dark-red);
+}
+
+.yt-comment-cancel {
+    background: none;
+    color: var(--yt-text-secondary);
+}
+
+.yt-comment-cancel:hover {
+    background-color: var(--yt-hover);
+}
+
+.yt-comments-list {
+    margin-top: 24px;
+}
+
+.yt-comment-item {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.yt-comment-content {
+    flex: 1;
+}
+
+.yt-comment-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.yt-comment-author {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--yt-text);
+}
+
+.yt-comment-time {
+    font-size: 12px;
+    color: var(--yt-text-secondary);
+}
+
+.yt-comment-text {
+    font-size: 14px;
+    color: var(--yt-text);
+    line-height: 1.4;
+    margin-bottom: 8px;
+}
+
+.yt-comment-actions-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.yt-comment-action-btn {
+    background: none;
+    border: none;
+    color: var(--yt-text-secondary);
+    padding: 6px 12px;
+    border-radius: 18px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.yt-comment-action-btn:hover {
+    background-color: var(--yt-hover);
+    color: var(--yt-text);
+}
+
+.yt-reply-composer {
+    margin-top: 16px;
+    display: flex;
+    gap: 16px;
+}
+
+.yt-reply-input-container {
+    flex: 1;
+}
+
+.yt-comment-reply {
+    display: flex;
+    gap: 16px;
+    margin-top: 16px;
+    margin-left: 56px;
+}
+
+.yt-no-comments {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--yt-text-secondary);
+}
+
+.yt-comment-login {
+    text-align: center;
+    padding: 20px;
+    background: var(--yt-card-bg);
+    border-radius: 8px;
+    margin-bottom: 24px;
+}
+
+.yt-comment-login a {
+    color: var(--yt-red);
+    text-decoration: none;
+}
+
+.yt-comment-login a:hover {
+    text-decoration: underline;
+}
+
+.yt-related-header h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--yt-text);
+    margin: 0 0 16px 0;
+}
+
+.yt-related-videos {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.yt-related-video {
+    display: flex;
+    gap: 8px;
+    padding: 4px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.yt-related-video:hover {
+    background-color: var(--yt-hover);
+}
+
+.yt-related-thumbnail {
+    position: relative;
+    width: 168px;
+    height: 94px;
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: var(--yt-card-bg);
+    flex-shrink: 0;
+}
+
+.yt-related-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.yt-related-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 24px;
+}
+
+.yt-related-duration {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 2px 4px;
+    border-radius: 2px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.yt-related-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.yt-related-title {
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.3;
+    margin: 0 0 4px 0;
+    color: var(--yt-text);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.yt-related-channel {
+    font-size: 12px;
+    color: var(--yt-text-secondary);
+    margin-bottom: 2px;
+}
+
+.yt-related-meta {
+    font-size: 12px;
+    color: var(--yt-text-secondary);
+}
+
+@media (max-width: 1024px) {
+    .yt-watch-container {
+        flex-direction: column;
+    }
+    
+    .yt-watch-secondary {
+        width: 100%;
+    }
+    
+    .yt-related-videos {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 16px;
+    }
+}
+
+@media (max-width: 768px) {
+    .yt-video-title {
+        font-size: 18px;
+    }
+    
+    .yt-video-meta-container {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    
+    .yt-video-actions {
+        overflow-x: auto;
+        padding-bottom: 4px;
+    }
+    
+    .yt-channel-info {
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    
+    .yt-related-video {
+        flex-direction: column;
+    }
+    
+    .yt-related-thumbnail {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 16/9;
+    }
+}
+
+/* Modal Styles */
+.yt-modal {
+    display: none;
+    position: fixed;
+    z-index: 10000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(4px);
+}
+
+.yt-modal.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.yt-modal-content {
+    background: var(--yt-card-bg);
+    border-radius: 12px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.yt-modal-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--yt-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.yt-modal-header h3 {
+    color: var(--yt-text);
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.yt-modal-close {
+    background: none;
+    border: none;
+    color: var(--yt-text-secondary);
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s;
+}
+
+.yt-modal-close:hover {
+    background: var(--yt-hover);
+    color: var(--yt-text);
+}
+
+.yt-modal-body {
+    padding: 24px;
+}
+
+/* Share Modal Styles */
+.yt-share-options h4 {
+    color: var(--yt-text);
+    margin: 0 0 16px 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.yt-share-buttons {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+
+.yt-share-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    text-decoration: none;
+    color: white;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.yt-share-twitter {
+    background: #1da1f2;
+}
+
+.yt-share-twitter:hover {
+    background: #0d8bd9;
+    color: white;
+}
+
+.yt-share-facebook {
+    background: #1877f2;
+}
+
+.yt-share-facebook:hover {
+    background: #0e5eb8;
+    color: white;
+}
+
+.yt-share-line {
+    background: #00c300;
+}
+
+.yt-share-line:hover {
+    background: #00a300;
+    color: white;
+}
+
+.yt-share-link {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.yt-share-link input {
+    flex: 1;
+    background: var(--yt-bg);
+    border: 1px solid var(--yt-border);
+    color: var(--yt-text);
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.yt-copy-btn {
+    background: var(--yt-red);
+    color: white;
+    border: none;
+    padding: 12px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+}
+
+.yt-copy-btn:hover {
+    background: var(--yt-dark-red);
+}
+
+/* Donation Modal Styles */
+.yt-donation-options p {
+    color: var(--yt-text-secondary);
+    margin-bottom: 24px;
+    line-height: 1.5;
+}
+
+.yt-donation-amounts h4 {
+    color: var(--yt-text);
+    margin: 0 0 16px 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.yt-amount-buttons {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.yt-amount-btn {
+    background: var(--yt-bg);
+    border: 2px solid var(--yt-border);
+    color: var(--yt-text);
+    padding: 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 16px;
+    transition: all 0.2s;
+}
+
+.yt-amount-btn:hover,
+.yt-amount-btn.selected {
+    border-color: var(--yt-red);
+    background: rgba(255, 0, 0, 0.1);
+    color: var(--yt-red);
+}
+
+.yt-custom-amount {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 24px;
+}
+
+.yt-custom-amount input {
+    flex: 1;
+    background: var(--yt-bg);
+    border: 1px solid var(--yt-border);
+    color: var(--yt-text);
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 16px;
+}
+
+.yt-custom-amount span {
+    color: var(--yt-text);
+    font-weight: 500;
+}
+
+.yt-donation-message h4 {
+    color: var(--yt-text);
+    margin: 0 0 12px 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.yt-donation-message textarea {
+    width: 100%;
+    background: var(--yt-bg);
+    border: 1px solid var(--yt-border);
+    color: var(--yt-text);
+    padding: 12px 16px;
+    border-radius: 8px;
+    resize: vertical;
+    min-height: 80px;
+    font-family: inherit;
+    font-size: 14px;
+    margin-bottom: 24px;
+}
+
+.yt-donation-actions {
+    display: flex;
+    justify-content: center;
+}
+
+.yt-btn {
+    padding: 14px 24px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+    font-size: 16px;
+}
+
+.yt-btn-primary {
+    background: var(--yt-red);
+    color: white;
+}
+
+.yt-btn-primary:hover {
+    background: var(--yt-dark-red);
+}
+
+.yt-donation-button {
+    background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%) !important;
+    color: white !important;
+    border: none !important;
+}
+
+.yt-donation-button:hover {
+    background: linear-gradient(135deg, #e55a2b 0%, #d4841a 100%) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(255, 107, 53, 0.4);
+}
+
+.yt-comment-delete-btn {
+    color: #ff4444 !important;
+}
+
+.yt-comment-delete-btn:hover {
+    background-color: rgba(255, 68, 68, 0.1) !important;
+    color: #ff6666 !important;
+}
+
+@media (max-width: 768px) {
+    .yt-modal-content {
+        width: 95%;
+        margin: 20px;
+    }
+    
+    .yt-share-buttons {
+        flex-direction: column;
+    }
+    
+    .yt-amount-buttons {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .yt-share-link {
+        flex-direction: column;
+    }
+    
+    .yt-share-link input {
+        margin-bottom: 8px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const videoPlayer = document.getElementById('videoPlayer');
+    const playbackRateSelect = document.getElementById('playbackRate');
+    
+    if (videoPlayer && playbackRateSelect) {
+        playbackRateSelect.addEventListener('change', function() {
+            const rate = parseFloat(this.value);
+            videoPlayer.playbackRate = rate;
+        });
+        
+        videoPlayer.addEventListener('loadedmetadata', function() {
+            videoPlayer.playbackRate = parseFloat(playbackRateSelect.value);
+        });
+    }
+    
+    // Update subscribe button appearance
+    updateSubscribeButton();
+});
+
+function toggleDescription() {
+    const descriptionFull = document.getElementById('descriptionFull');
+    const toggleText = document.getElementById('descToggleText');
+    const isVisible = descriptionFull.style.display !== 'none';
+    
+    if (isVisible) {
+        descriptionFull.style.display = 'none';
+        toggleText.textContent = 'もっと見る';
+    } else {
+        descriptionFull.style.display = 'block';
+        toggleText.textContent = '表示を減らす';
+    }
+}
+
+function updateSubscribeButton() {
+    const subscribeBtn = document.getElementById('subscribeBtn');
+    const subscribeText = document.getElementById('subscribeText');
+    const subscribeIcon = document.getElementById('subscribeIcon');
+    
+    if (!subscribeBtn) return;
+    
+    const isSubscribed = subscribeText.textContent.trim() === '登録済み';
+    
+    if (isSubscribed) {
+        subscribeBtn.style.backgroundColor = '#606060';
+        subscribeBtn.style.color = '#ffffff';
+        subscribeIcon.className = 'fas fa-bell';
+    } else {
+        subscribeBtn.style.backgroundColor = 'var(--yt-red)';
+        subscribeBtn.style.color = '#ffffff';
+        subscribeIcon.className = 'fas fa-bell';
+    }
+}
+
+async function toggleSubscription() {
+    const subscribeBtn = document.getElementById('subscribeBtn');
+    const subscribeText = document.getElementById('subscribeText');
+    const subscriberCount = document.querySelector('.yt-channel-subscribers');
+    
+    if (!subscribeBtn || subscribeBtn.disabled) return;
+    
+    // Disable button during request
+    subscribeBtn.disabled = true;
+    const originalText = subscribeText.textContent;
+    subscribeText.textContent = '処理中...';
+    
+    try {
+        const response = await fetch('{% url "toggle_subscription" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                channel_id: {{ channel.id }}
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            // Update UI
+            subscribeText.textContent = data.subscribed ? '登録済み' : 'チャンネル登録';
+            subscriberCount.textContent = data.subscriber_count + ' 人の登録者';
+            
+            // Update button style
+            updateSubscribeButton();
+            
+            // Show success message
+            showNotification(data.message, 'success');
+        } else {
+            throw new Error(data.error || 'エラーが発生しました');
+        }
+    } catch (error) {
+        console.error('Subscription error:', error);
+        subscribeText.textContent = originalText;
+        showNotification(error.message || 'エラーが発生しました', 'error');
+    } finally {
+        subscribeBtn.disabled = false;
+    }
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Comment functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const commentInput = document.getElementById('commentInput');
+    if (commentInput) {
+        commentInput.addEventListener('focus', function() {
+            document.querySelector('.yt-comment-actions').style.display = 'flex';
+        });
+    }
+});
+
+function cancelComment() {
+    const commentInput = document.getElementById('commentInput');
+    const commentActions = document.querySelector('.yt-comment-actions');
+    commentInput.value = '';
+    commentActions.style.display = 'none';
+    commentInput.blur();
+}
+
+async function submitComment() {
+    const commentInput = document.getElementById('commentInput');
+    const content = commentInput.value.trim();
+    
+    if (!content) {
+        showNotification('コメントを入力してください', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch('{% url "add_comment" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                video_id: {{ video.id }},
+                content: content
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            showNotification(data.message, 'success');
+            // Reload page to show new comment
+            location.reload();
+        } else {
+            showNotification(data.error || 'エラーが発生しました', 'error');
+        }
+    } catch (error) {
+        console.error('Error submitting comment:', error);
+        showNotification('エラーが発生しました', 'error');
+    }
+}
+
+function showReplyInput(commentId) {
+    const replyComposer = document.getElementById('replyComposer' + commentId);
+    replyComposer.style.display = 'flex';
+}
+
+function cancelReply(commentId) {
+    const replyComposer = document.getElementById('replyComposer' + commentId);
+    const replyInput = replyComposer.querySelector('.yt-reply-input');
+    replyInput.value = '';
+    replyComposer.style.display = 'none';
+}
+
+async function submitReply(commentId) {
+    const replyComposer = document.getElementById('replyComposer' + commentId);
+    const replyInput = replyComposer.querySelector('.yt-reply-input');
+    const content = replyInput.value.trim();
+    
+    if (!content) {
+        showNotification('返信を入力してください', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch('{% url "add_comment" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                video_id: {{ video.id }},
+                content: content,
+                parent_id: commentId
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            showNotification(data.message, 'success');
+            // Reload page to show new reply
+            location.reload();
+        } else {
+            showNotification(data.error || 'エラーが発生しました', 'error');
+        }
+    } catch (error) {
+        console.error('Error submitting reply:', error);
+        showNotification('エラーが発生しました', 'error');
+    }
+}
+
+async function toggleLike(videoId, likeType) {
+    try {
+        const response = await fetch('{% url "toggle_video_like" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                video_id: videoId,
+                like_type: likeType
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            // Update button states
+            const likeButtons = document.querySelectorAll('.yt-action-button');
+            likeButtons.forEach(btn => btn.classList.remove('yt-action-active'));
+            
+            if (data.liked) {
+                if (data.like_type === 1) {
+                    likeButtons[0].classList.add('yt-action-active');
+                } else {
+                    likeButtons[1].classList.add('yt-action-active');
+                }
+            }
+            
+            // Update counts
+            document.getElementById('like-count').textContent = data.like_count;
+            document.getElementById('dislike-count').textContent = data.dislike_count;
+            
+            showNotification(data.message, 'success');
+        } else {
+            showNotification(data.error || 'エラーが発生しました', 'error');
+        }
+    } catch (error) {
+        console.error('Error toggling like:', error);
+        showNotification('エラーが発生しました', 'error');
+    }
+}
+
+async function toggleWatchLater(videoId) {
+    try {
+        const response = await fetch('{% url "toggle_watch_later" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                video_id: videoId
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            showNotification(data.message, 'success');
+        } else {
+            showNotification(data.error || 'エラーが発生しました', 'error');
+        }
+    } catch (error) {
+        console.error('Error toggling watch later:', error);
+        showNotification('エラーが発生しました', 'error');
+    }
+}
+
+function showNotification(message, type = 'info') {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `yt-notification yt-notification-${type}`;
+    notification.innerHTML = `
+        <div class="yt-notification-content">
+            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    
+    // Add styles if not already present
+    if (!document.querySelector('#notification-styles')) {
+        const style = document.createElement('style');
+        style.id = 'notification-styles';
+        style.textContent = `
+            .yt-notification {
+                position: fixed;
+                top: 80px;
+                right: 20px;
+                z-index: 10000;
+                background: var(--yt-card-bg);
+                border: 1px solid var(--yt-border);
+                border-radius: 8px;
+                padding: 12px 16px;
+                min-width: 300px;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+                transform: translateX(100%);
+                transition: transform 0.3s ease;
+            }
+            
+            .yt-notification.show {
+                transform: translateX(0);
+            }
+            
+            .yt-notification-success {
+                border-left: 4px solid #00d563;
+            }
+            
+            .yt-notification-error {
+                border-left: 4px solid #ff4444;
+            }
+            
+            .yt-notification-info {
+                border-left: 4px solid #4285f4;
+            }
+            
+            .yt-notification-content {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                color: var(--yt-text);
+            }
+            
+            .yt-notification-success i {
+                color: #00d563;
+            }
+            
+            .yt-notification-error i {
+                color: #ff4444;
+            }
+            
+            .yt-notification-info i {
+                color: #4285f4;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    // Add to page
+    document.body.appendChild(notification);
+    
+    // Trigger animation
+    setTimeout(() => {
+        notification.classList.add('show');
+    }, 100);
+    
+    // Remove after delay
+    setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, 3000);
+}
+
+// Share Modal Functions
+function openShareModal() {
+    const modal = document.getElementById('shareModal');
+    const videoTitle = '{{ video.title|escapejs }}';
+    const videoUrl = window.location.href;
+    
+    // Set up share links
+    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(videoTitle)}&url=${encodeURIComponent(videoUrl)}`;
+    const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(videoUrl)}`;
+    const lineUrl = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(videoUrl)}`;
+    
+    document.getElementById('shareTwitter').href = twitterUrl;
+    document.getElementById('shareFacebook').href = facebookUrl;
+    document.getElementById('shareLine').href = lineUrl;
+    document.getElementById('shareLink').value = videoUrl;
+    
+    modal.classList.add('show');
+}
+
+function closeShareModal() {
+    const modal = document.getElementById('shareModal');
+    modal.classList.remove('show');
+}
+
+function copyShareLink() {
+    const linkInput = document.getElementById('shareLink');
+    linkInput.select();
+    linkInput.setSelectionRange(0, 99999);
+    
+    try {
+        document.execCommand('copy');
+        showNotification('リンクをコピーしました！', 'success');
+    } catch (err) {
+        // Fallback for modern browsers
+        navigator.clipboard.writeText(linkInput.value).then(() => {
+            showNotification('リンクをコピーしました！', 'success');
+        }).catch(() => {
+            showNotification('コピーに失敗しました', 'error');
+        });
+    }
+}
+
+// Donation Modal Functions
+let selectedAmount = 0;
+
+function openDonationModal() {
+    const modal = document.getElementById('donationModal');
+    modal.classList.add('show');
+    selectedAmount = 0;
+    
+    // Clear any previous selections
+    document.querySelectorAll('.yt-amount-btn').forEach(btn => {
+        btn.classList.remove('selected');
+    });
+    document.getElementById('customAmount').value = '';
+    document.getElementById('donationMessage').value = '';
+}
+
+function closeDonationModal() {
+    const modal = document.getElementById('donationModal');
+    modal.classList.remove('show');
+}
+
+function selectAmount(amount) {
+    selectedAmount = amount;
+    
+    // Update button states
+    document.querySelectorAll('.yt-amount-btn').forEach(btn => {
+        btn.classList.remove('selected');
+    });
+    
+    // Find and select the clicked button
+    event.target.classList.add('selected');
+    
+    // Clear custom amount
+    document.getElementById('customAmount').value = '';
+}
+
+function processDonation() {
+    // Get amount (either selected or custom)
+    const customAmount = document.getElementById('customAmount').value;
+    const amount = customAmount ? parseInt(customAmount) : selectedAmount;
+    const message = document.getElementById('donationMessage').value;
+    
+    if (!amount || amount < 100) {
+        showNotification('100円以上の金額を選択してください', 'error');
+        return;
+    }
+    
+    if (amount > 100000) {
+        showNotification('金額は100,000円以下にしてください', 'error');
+        return;
+    }
+    
+    // Simulate Link payment integration
+    const paymentData = {
+        amount: amount,
+        message: message,
+        recipient: '{{ video.uploaded_by.username|escapejs }}',
+        video_id: {{ video.id }}
+    };
+    
+    // In a real implementation, this would integrate with Link payment API
+    showNotification('投げ銭機能は現在開発中です。近日公開予定！', 'info');
+    closeDonationModal();
+    
+    // TODO: Implement actual Link payment integration
+    // Example Link payment flow:
+    // 1. Create payment request to Link API
+    // 2. Redirect user to Link payment page
+    // 3. Handle payment completion callback
+    // 4. Update database with donation record
+    
+    console.log('Donation request:', paymentData);
+}
+
+// Comment Deletion Function
+async function deleteComment(commentId) {
+    if (!confirm('このコメントを削除しますか？')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('{% url "delete_comment" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                comment_id: commentId
+            })
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            showNotification(data.message || 'コメントを削除しました', 'success');
+            
+            // Remove comment from DOM
+            const commentElement = document.querySelector(`[data-comment-id="${commentId}"]`);
+            if (commentElement) {
+                commentElement.remove();
+            } else {
+                // Refresh page if we can't find the specific element
+                location.reload();
+            }
+        } else {
+            const data = await response.json();
+            showNotification(data.error || 'コメントの削除に失敗しました', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showNotification('エラーが発生しました', 'error');
+    }
+}
+
+// Close modals when clicking outside
+document.addEventListener('click', function(event) {
+    const shareModal = document.getElementById('shareModal');
+    const donationModal = document.getElementById('donationModal');
+    
+    if (event.target === shareModal) {
+        closeShareModal();
+    }
+    
+    if (event.target === donationModal) {
+        closeDonationModal();
+    }
+});
+
+// Close modals with Escape key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeShareModal();
+        closeDonationModal();
+    }
+});
+
+// Custom amount input handling
+document.getElementById('customAmount').addEventListener('input', function() {
+    if (this.value) {
+        selectedAmount = 0;
+        document.querySelectorAll('.yt-amount-btn').forEach(btn => {
+            btn.classList.remove('selected');
+        });
+    }
+});
+</script>
+{% endblock %}

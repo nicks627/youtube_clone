@@ -1,0 +1,547 @@
+{% extends 'videos/base.html' %}
+
+{% block title %}履歴 - YouTube Clone{% endblock %}
+
+{% block content %}
+<div class="yt-history-container">
+    <div class="yt-history-header">
+        <h1 class="yt-history-title">
+            <i class="fas fa-history"></i>
+            視聴履歴
+        </h1>
+        <p class="yt-history-subtitle">最近視聴した動画</p>
+    </div>
+
+    {% if history_items %}
+    <div class="yt-history-content">
+        <div class="yt-history-actions">
+            <button class="yt-btn yt-btn-secondary" onclick="clearHistory()">
+                <i class="fas fa-trash-alt"></i>
+                履歴をクリア
+            </button>
+        </div>
+        
+        <div class="yt-history-list">
+            {% for item in history_items %}
+                <div class="yt-history-item">
+                    <div class="yt-history-thumbnail" onclick="location.href='{% url 'video_detail' item.video.pk %}'">
+                        {% if item.video.thumbnail %}
+                            <img src="{{ item.video.thumbnail.url }}" alt="{{ item.video.title }}">
+                        {% else %}
+                            <div class="yt-history-placeholder">
+                                <i class="fas fa-play"></i>
+                            </div>
+                        {% endif %}
+                        <div class="yt-video-duration">8:42</div>
+                    </div>
+                    
+                    <div class="yt-history-info" onclick="location.href='{% url 'video_detail' item.video.pk %}'">
+                        <h3 class="yt-history-video-title">{{ item.video.title }}</h3>
+                        <div class="yt-history-meta">
+                            <div class="yt-history-channel">{{ item.video.uploaded_by.username }}</div>
+                            <div class="yt-history-stats">
+                                <span>{{ item.video.views|floatformat:0 }} 回視聴</span>
+                                <span>•</span>
+                                <span>{{ item.watched_at|timesince }}前に視聴</span>
+                            </div>
+                            {% if item.video.description %}
+                            <div class="yt-history-description">
+                                {{ item.video.description|truncatechars:150 }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="yt-history-actions-menu">
+                        <button class="yt-history-action-btn" onclick="removeFromHistory({{ item.id }})">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% else %}
+    <div class="yt-empty-state">
+        <div class="yt-empty-icon">
+            <i class="fas fa-history"></i>
+        </div>
+        <h3>視聴履歴がありません</h3>
+        <p>動画を視聴すると、ここに履歴が表示されます。</p>
+        <a href="{% url 'video_list' %}" class="yt-btn yt-btn-primary">
+            <i class="fas fa-home"></i>
+            ホームに戻る
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.yt-history-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px;
+}
+
+.yt-history-header {
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--yt-border);
+}
+
+.yt-history-title {
+    font-size: 32px;
+    font-weight: 600;
+    color: var(--yt-text);
+    margin: 0 0 8px 0;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.yt-history-title i {
+    color: var(--yt-text-secondary);
+}
+
+.yt-history-subtitle {
+    font-size: 16px;
+    color: var(--yt-text-secondary);
+    margin: 0;
+}
+
+.yt-history-actions {
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.yt-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+}
+
+.yt-btn-primary {
+    background: var(--yt-red);
+    color: white;
+}
+
+.yt-btn-primary:hover {
+    background: var(--yt-dark-red);
+    color: white;
+}
+
+.yt-btn-secondary {
+    background: var(--yt-hover);
+    color: var(--yt-text);
+    border: 1px solid var(--yt-border);
+}
+
+.yt-btn-secondary:hover {
+    background: #3f3f3f;
+}
+
+.yt-history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.yt-history-item {
+    display: flex;
+    gap: 16px;
+    padding: 16px;
+    background: var(--yt-card-bg);
+    border: 1px solid var(--yt-border);
+    border-radius: 12px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    animation: slideInFromLeft 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    opacity: 0;
+}
+
+.yt-history-item:hover {
+    background: var(--yt-hover);
+    transform: translateY(-4px) translateX(8px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+}
+
+.yt-history-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+    transition: left 0.6s ease;
+}
+
+.yt-history-item:hover::before {
+    left: 100%;
+}
+
+/* Stagger animations */
+.yt-history-item:nth-child(1) { animation-delay: 0.1s; }
+.yt-history-item:nth-child(2) { animation-delay: 0.2s; }
+.yt-history-item:nth-child(3) { animation-delay: 0.3s; }
+.yt-history-item:nth-child(4) { animation-delay: 0.4s; }
+.yt-history-item:nth-child(5) { animation-delay: 0.5s; }
+.yt-history-item:nth-child(6) { animation-delay: 0.6s; }
+
+@keyframes slideInFromLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.yt-history-thumbnail {
+    position: relative;
+    width: 246px;
+    height: 138px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--yt-card-bg);
+    flex-shrink: 0;
+    cursor: pointer;
+}
+
+.yt-history-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.yt-history-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 24px;
+}
+
+.yt-video-duration {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 2px 4px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.yt-history-info {
+    flex: 1;
+    min-width: 0;
+    cursor: pointer;
+}
+
+.yt-history-video-title {
+    font-size: 18px;
+    font-weight: 500;
+    line-height: 1.4;
+    margin: 0 0 8px 0;
+    color: var(--yt-text);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.yt-history-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.yt-history-channel {
+    font-size: 14px;
+    color: var(--yt-text-secondary);
+    font-weight: 500;
+}
+
+.yt-history-stats {
+    font-size: 14px;
+    color: var(--yt-text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.yt-history-description {
+    font-size: 14px;
+    color: var(--yt-text-secondary);
+    line-height: 1.4;
+    margin-top: 8px;
+}
+
+.yt-history-actions-menu {
+    display: flex;
+    align-items: flex-start;
+}
+
+.yt-history-action-btn {
+    background: none;
+    border: none;
+    color: var(--yt-text-secondary);
+    padding: 8px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.yt-history-action-btn:hover {
+    background: var(--yt-hover);
+    color: var(--yt-text);
+}
+
+.yt-empty-state {
+    text-align: center;
+    padding: 80px 20px;
+}
+
+.yt-empty-icon {
+    font-size: 64px;
+    color: var(--yt-text-secondary);
+    margin-bottom: 24px;
+}
+
+.yt-empty-state h3 {
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--yt-text);
+    margin: 0 0 12px 0;
+}
+
+.yt-empty-state p {
+    font-size: 16px;
+    color: var(--yt-text-secondary);
+    margin: 0 0 24px 0;
+}
+
+@media (max-width: 768px) {
+    .yt-history-container {
+        padding: 0 16px;
+    }
+    
+    .yt-history-title {
+        font-size: 24px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    
+    .yt-history-item {
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .yt-history-thumbnail {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 16/9;
+    }
+    
+    .yt-history-actions {
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .yt-history-title {
+        font-size: 20px;
+    }
+    
+    .yt-history-item {
+        padding: 12px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function showMessage(message, isError = false) {
+    // Remove existing message
+    const existingMessage = document.querySelector('.yt-message');
+    if (existingMessage) {
+        existingMessage.remove();
+    }
+    
+    // Create message element
+    const messageEl = document.createElement('div');
+    messageEl.className = `yt-message ${isError ? 'error' : 'success'}`;
+    messageEl.textContent = message;
+    messageEl.style.cssText = `
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        background: ${isError ? '#ff4444' : '#4CAF50'};
+        color: white;
+        padding: 12px 20px;
+        border-radius: 8px;
+        z-index: 10000;
+        font-size: 14px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        animation: slideIn 0.3s ease;
+    `;
+    
+    document.body.appendChild(messageEl);
+    
+    // Auto remove after 3 seconds
+    setTimeout(() => {
+        messageEl.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => messageEl.remove(), 300);
+    }, 3000);
+}
+
+function removeFromHistory(historyId) {
+    if (confirm('この動画を履歴から削除しますか？')) {
+        const button = event.target.closest('button');
+        const originalContent = button.innerHTML;
+        
+        // Show loading state
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        
+        fetch('/api/history/remove/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                history_id: historyId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showMessage(data.message);
+                // Remove the item from the page
+                const historyItem = button.closest('.yt-history-item');
+                historyItem.style.animation = 'fadeOut 0.3s ease';
+                setTimeout(() => {
+                    historyItem.remove();
+                    
+                    // Check if no items left
+                    const remainingItems = document.querySelectorAll('.yt-history-item');
+                    if (remainingItems.length === 0) {
+                        location.reload(); // Show empty state
+                    }
+                }, 300);
+            } else {
+                showMessage(data.error || '削除に失敗しました', true);
+                button.disabled = false;
+                button.innerHTML = originalContent;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showMessage('エラーが発生しました', true);
+            button.disabled = false;
+            button.innerHTML = originalContent;
+        });
+    }
+}
+
+function clearHistory() {
+    if (confirm('すべての視聴履歴を削除しますか？この操作は取り消せません。')) {
+        const button = event.target.closest('button');
+        const originalContent = button.innerHTML;
+        
+        // Show loading state
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 削除中...';
+        
+        fetch('/api/history/clear/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showMessage(data.message);
+                // Reload page to show empty state
+                setTimeout(() => {
+                    location.reload();
+                }, 1000);
+            } else {
+                showMessage(data.error || '削除に失敗しました', true);
+                button.disabled = false;
+                button.innerHTML = originalContent;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showMessage('エラーが発生しました', true);
+            button.disabled = false;
+            button.innerHTML = originalContent;
+        });
+    }
+}
+
+// Add CSS animations
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    
+    @keyframes slideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+    }
+    
+    @keyframes fadeOut {
+        from { opacity: 1; transform: scale(1); }
+        to { opacity: 0; transform: scale(0.95); }
+    }
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %}

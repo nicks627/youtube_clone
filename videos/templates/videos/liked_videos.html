@@ -1,0 +1,539 @@
+{% extends 'videos/base.html' %}
+
+{% block title %}高評価した動画 - YouTube Clone{% endblock %}
+
+{% block content %}
+<div class="yt-liked-container">
+    <div class="yt-liked-header">
+        <h1 class="yt-liked-title">
+            <i class="fas fa-thumbs-up"></i>
+            高評価した動画
+        </h1>
+        {% if total_liked > 0 %}
+        <div class="yt-liked-stats">
+            <span class="yt-stat-item">
+                <i class="fas fa-thumbs-up"></i>
+                {{ total_liked }} 本の動画
+            </span>
+        </div>
+        {% endif %}
+    </div>
+                
+                {% if not videos %}
+                    <!-- No liked videos yet -->
+                    <div class="yt-empty-state">
+                        <div class="yt-empty-content">
+                            <i class="fas fa-thumbs-up fa-3x text-muted mb-3"></i>
+                            <h3>まだ高評価した動画がありません</h3>
+                            <p class="text-muted">
+                                気に入った動画に高評価を付けて、後で簡単に見つけられるようにしましょう！<br>
+                                高評価した動画はここに表示されます。
+                            </p>
+                            <a href="{% url 'video_list' %}" class="btn btn-primary btn-lg mt-3">
+                                <i class="fas fa-search"></i>
+                                動画を探す
+                            </a>
+                        </div>
+                        
+                        <div class="yt-tips mt-5">
+                            <h4>高評価機能について</h4>
+                            <div class="row mt-3">
+                                <div class="col-md-4">
+                                    <div class="yt-tip-card">
+                                        <i class="fas fa-heart fa-2x mb-3"></i>
+                                        <h5>お気に入りを保存</h5>
+                                        <p>気に入った動画に高評価を付けて、いつでも再視聴できます</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="yt-tip-card">
+                                        <i class="fas fa-user-friends fa-2x mb-3"></i>
+                                        <h5>クリエイターを応援</h5>
+                                        <p>高評価はクリエイターにとって大きな励みになります</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="yt-tip-card">
+                                        <i class="fas fa-chart-line fa-2x mb-3"></i>
+                                        <h5>おすすめの改善</h5>
+                                        <p>高評価した動画を基に、より良いおすすめが表示されます</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+{% else %}
+    <!-- Show liked videos -->
+    <div class="yt-liked-videos">
+        <div class="yt-filter-bar">
+            <div class="yt-filter-options">
+                <select id="sortFilter" class="yt-select" onchange="sortVideos()">
+                    <option value="recent">最近高評価した順</option>
+                    <option value="popular">再生回数順</option>
+                    <option value="title">タイトル順</option>
+                </select>
+            </div>
+            <div class="yt-view-options">
+                <button class="yt-btn yt-btn-secondary active" id="gridView" onclick="setViewMode('grid')">
+                    <i class="fas fa-th"></i>
+                </button>
+                <button class="yt-btn yt-btn-secondary" id="listView" onclick="setViewMode('list')">
+                    <i class="fas fa-list"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="yt-video-grid" id="videosContainer">
+            {% for video in videos %}
+            <div class="yt-video-card video-item" 
+                 data-title="{{ video.title|lower }}" 
+                 data-views="{{ video.views }}" 
+                 data-date="{{ video.uploaded_at|date:'Y-m-d' }}">
+                <a href="{% url 'video_detail' video.pk %}" class="yt-video-link">
+                    <div class="yt-video-thumbnail">
+                        {% if video.thumbnail %}
+                            <img src="{{ video.thumbnail.url }}" alt="{{ video.title }}" loading="lazy">
+                        {% else %}
+                            <div class="yt-default-thumbnail">
+                                <i class="fas fa-play"></i>
+                            </div>
+                        {% endif %}
+                        <div class="yt-video-duration">{{ video.get_duration_display }}</div>
+                        <div class="yt-liked-badge">
+                            <i class="fas fa-thumbs-up"></i>
+                        </div>
+                    </div>
+                </a>
+                <div class="yt-video-info">
+                    <div class="yt-video-avatar">
+                        {{ video.uploaded_by.username|first|upper }}
+                    </div>
+                    <div class="yt-video-details">
+                        <h3 class="yt-video-title">
+                            <a href="{% url 'video_detail' video.pk %}">{{ video.title }}</a>
+                        </h3>
+                        <div class="yt-video-meta">
+                            <div class="yt-video-channel">{{ video.uploaded_by.username }}</div>
+                            <div class="yt-video-stats">
+                                <span>{{ video.views|floatformat:0 }} 回視聴</span>
+                                <span>•</span>
+                                <span>{{ video.uploaded_at|timesince }}前</span>
+                                <span>•</span>
+                                <span><i class="fas fa-thumbs-up"></i> {{ video.get_like_count }}</span>
+                            </div>
+                        </div>
+                        <div class="yt-video-actions">
+                            <button class="yt-unlike-btn" onclick="removeLike({{ video.id }})">
+                                <i class="fas fa-thumbs-down"></i>
+                                高評価を取り消し
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+{% endif %}
+</div>
+
+<style>
+/* Liked videos page styles */
+.yt-liked-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px;
+}
+
+.yt-liked-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--yt-border);
+}
+
+.yt-liked-title {
+    font-size: 32px;
+    font-weight: 600;
+    color: var(--yt-text);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.yt-liked-title i {
+    color: var(--yt-red);
+}
+
+.yt-liked-stats {
+    display: flex;
+    gap: 20px;
+}
+
+.yt-stat-item {
+    color: var(--yt-text-secondary);
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.yt-empty-state {
+    text-align: center;
+    padding: 80px 20px;
+}
+
+.yt-empty-content {
+    margin-bottom: 40px;
+}
+
+.yt-tips {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.yt-tip-card {
+    background: var(--yt-card-bg);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    height: 100%;
+    border: 1px solid var(--yt-border);
+    color: var(--yt-text);
+}
+
+.yt-tip-card i {
+    color: var(--yt-red);
+}
+
+.yt-tip-card h5 {
+    color: var(--yt-text);
+    margin-bottom: 10px;
+}
+
+.yt-tip-card p {
+    color: var(--yt-text-secondary);
+    font-size: 14px;
+    margin: 0;
+}
+
+.yt-filter-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding: 16px;
+    background: var(--yt-card-bg);
+    border-radius: 12px;
+    border: 1px solid var(--yt-border);
+}
+
+.yt-select {
+    background: var(--yt-card-bg);
+    border: 1px solid var(--yt-border);
+    color: var(--yt-text);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.yt-select:focus {
+    outline: none;
+    border-color: var(--yt-red);
+}
+
+.yt-view-options {
+    display: flex;
+    gap: 8px;
+}
+
+.yt-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+}
+
+.yt-btn-secondary {
+    background: var(--yt-border);
+    color: var(--yt-text);
+}
+
+.yt-btn-secondary:hover {
+    background: var(--yt-hover);
+}
+
+.yt-btn-secondary.active {
+    background: var(--yt-red);
+    color: white;
+}
+
+/* Video grid using existing styles */
+.yt-video-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+    padding: 20px 0;
+}
+
+.yt-video-card {
+    /* Inherits from base.html styles */
+    position: relative;
+}
+
+.yt-video-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+
+.yt-default-thumbnail {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255,255,255,0.8);
+    font-size: 48px;
+}
+
+.yt-liked-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: rgba(255, 0, 0, 0.9);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    backdrop-filter: blur(10px);
+}
+
+.yt-unlike-btn {
+    background: transparent;
+    border: 1px solid var(--yt-border);
+    color: var(--yt-text-secondary);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 8px;
+}
+
+.yt-unlike-btn:hover {
+    background: var(--yt-red);
+    border-color: var(--yt-red);
+    color: white;
+}
+
+/* List view styles */
+.list-view .yt-video-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.list-view .yt-video-card {
+    display: flex;
+    height: 140px;
+}
+
+.list-view .yt-video-thumbnail {
+    width: 240px;
+    height: 140px;
+    flex-shrink: 0;
+}
+
+.list-view .yt-video-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.list-view .yt-video-details {
+    flex: 1;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .yt-liked-container {
+        padding: 0 16px;
+    }
+    
+    .yt-liked-header {
+        flex-direction: column;
+        gap: 16px;
+        align-items: flex-start;
+        text-align: left;
+    }
+    
+    .yt-liked-title {
+        font-size: 24px;
+    }
+    
+    .yt-filter-bar {
+        flex-direction: column;
+        gap: 16px;
+        align-items: stretch;
+    }
+    
+    .yt-video-grid {
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 16px;
+    }
+    
+    .list-view .yt-video-card {
+        flex-direction: column;
+        height: auto;
+    }
+    
+    .list-view .yt-video-thumbnail {
+        width: 100%;
+        height: 180px;
+    }
+}
+
+@media (max-width: 480px) {
+    .yt-video-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Animations */
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+        transform: scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+}
+</style>
+
+<script>
+function setViewMode(mode) {
+    const container = document.getElementById('videosContainer');
+    const gridBtn = document.getElementById('gridView');
+    const listBtn = document.getElementById('listView');
+    
+    if (mode === 'list') {
+        container.classList.add('list-view');
+        listBtn.classList.add('active');
+        gridBtn.classList.remove('active');
+        localStorage.setItem('likedVideoViewMode', 'list');
+    } else {
+        container.classList.remove('list-view');
+        gridBtn.classList.add('active');
+        listBtn.classList.remove('active');
+        localStorage.setItem('likedVideoViewMode', 'grid');
+    }
+}
+
+function sortVideos() {
+    const sortType = document.getElementById('sortFilter').value;
+    const container = document.querySelector('.yt-video-grid');
+    const items = Array.from(container.children);
+    
+    items.sort((a, b) => {
+        switch(sortType) {
+            case 'popular':
+                return parseInt(b.dataset.views) - parseInt(a.dataset.views);
+            case 'title':
+                return a.dataset.title.localeCompare(b.dataset.title);
+            case 'recent':
+            default:
+                return new Date(b.dataset.date) - new Date(a.dataset.date);
+        }
+    });
+    
+    items.forEach(item => container.appendChild(item));
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function removeLike(videoId) {
+    if (!confirm('この動画の高評価を取り消しますか？')) {
+        return;
+    }
+    
+    const button = event.target.closest('button');
+    const originalContent = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 処理中...';
+    
+    fetch('{% url "toggle_video_like" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            video_id: videoId,
+            like_type: 1
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            alert(data.error);
+            button.disabled = false;
+            button.innerHTML = originalContent;
+        } else {
+            // Remove the video card from the page
+            const videoCard = button.closest('.yt-video-card');
+            videoCard.style.animation = 'fadeOut 0.3s ease';
+            setTimeout(() => {
+                videoCard.remove();
+                
+                // Check if no videos left
+                const remainingVideos = document.querySelectorAll('.yt-video-card');
+                if (remainingVideos.length === 0) {
+                    location.reload();
+                }
+            }, 300);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('エラーが発生しました');
+        button.disabled = false;
+        button.innerHTML = originalContent;
+    });
+}
+
+// Initialize view mode from localStorage
+document.addEventListener('DOMContentLoaded', function() {
+    const savedMode = localStorage.getItem('likedVideoViewMode') || 'grid';
+    setViewMode(savedMode);
+});
+</script>
+{% endblock %}

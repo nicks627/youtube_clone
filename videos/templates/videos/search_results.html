@@ -1,0 +1,485 @@
+{% extends 'videos/base.html' %}
+
+{% block title %}
+{% if search_query %}
+"{{ search_query }}" の検索結果 - YouTube Clone
+{% else %}
+検索結果 - YouTube Clone
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="yt-search-results-container">
+    <div class="yt-search-header">
+        {% if search_query %}
+        <h1 class="yt-search-title">"{{ search_query }}" の検索結果</h1>
+        <p class="yt-search-subtitle">約 {{ results_count }} 件の結果</p>
+        {% else %}
+        <h1 class="yt-search-title">検索結果</h1>
+        {% endif %}
+    </div>
+
+    {% if videos %}
+    <div class="yt-search-results">
+        {% for video in videos %}
+            <div class="yt-search-result-item" onclick="location.href='{% url 'video_detail' video.pk %}'">
+                <div class="yt-search-thumbnail">
+                    {% if video.thumbnail %}
+                        <img src="{{ video.thumbnail.url }}" alt="{{ video.title }}">
+                    {% else %}
+                        <div class="yt-search-placeholder">
+                            <i class="fas fa-play"></i>
+                        </div>
+                    {% endif %}
+                    <div class="yt-video-duration">{{ video.get_duration_display }}</div>
+                </div>
+                
+                <div class="yt-search-info">
+                    <h3 class="yt-search-video-title">{{ video.title }}</h3>
+                    <div class="yt-search-meta">
+                        <div class="yt-search-stats">
+                            <span>{{ video.views|floatformat:0 }} 回視聴</span>
+                            <span>•</span>
+                            <span>{{ video.uploaded_at|timesince }}前</span>
+                        </div>
+                        <div class="yt-search-channel">
+                            <div class="yt-search-channel-avatar">
+                                {{ video.uploaded_by.username|first|upper }}
+                            </div>
+                            <span class="yt-search-channel-name">{{ video.uploaded_by.username }}</span>
+                        </div>
+                        {% if video.description %}
+                        <div class="yt-search-description">
+                            {{ video.description|truncatechars:200 }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="yt-search-actions">
+                    {% if user.is_authenticated %}
+                    <button class="yt-search-action-btn" onclick="event.stopPropagation(); addToWatchLater({{ video.id }})">
+                        <i class="fas fa-clock"></i>
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Add pagination -->
+    {% include 'videos/pagination.html' %}
+    {% else %>
+    <div class="yt-empty-state">
+        <div class="yt-empty-icon">
+            <i class="fas fa-search"></i>
+        </div>
+        <h3>検索結果が見つかりませんでした</h3>
+        <p>
+            {% if search_query %}
+            "{{ search_query }}" に一致する動画はありませんでした。
+            {% endif %}
+            検索キーワードを変更してもう一度お試しください。
+        </p>
+        <div class="yt-search-suggestions">
+            <h4>検索のヒント:</h4>
+            <ul>
+                <li>キーワードの数を減らしてみる</li>
+                <li>別の検索キーワードを使用する</li>
+                <li>より一般的なキーワードを使用する</li>
+            </ul>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.yt-search-results-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px;
+}
+
+.yt-search-header {
+    margin-bottom: 32px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--yt-border);
+}
+
+.yt-search-title {
+    font-size: 24px;
+    font-weight: 400;
+    color: var(--yt-text);
+    margin: 0 0 8px 0;
+}
+
+.yt-search-subtitle {
+    font-size: 14px;
+    color: var(--yt-text-secondary);
+    margin: 0;
+}
+
+.yt-search-results {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.yt-search-result-item {
+    display: flex;
+    gap: 16px;
+    padding: 0;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.yt-search-result-item:hover {
+    opacity: 0.8;
+}
+
+.yt-search-thumbnail {
+    position: relative;
+    width: 360px;
+    height: 202px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--yt-card-bg);
+    flex-shrink: 0;
+}
+
+.yt-search-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.yt-search-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 32px;
+}
+
+.yt-video-duration {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 2px 4px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.yt-search-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.yt-search-video-title {
+    font-size: 20px;
+    font-weight: 400;
+    line-height: 1.3;
+    margin: 0;
+    color: var(--yt-text);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.yt-search-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.yt-search-stats {
+    font-size: 13px;
+    color: var(--yt-text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.yt-search-channel {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.yt-search-channel-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--yt-red);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 500;
+    flex-shrink: 0;
+}
+
+.yt-search-channel-name {
+    font-size: 13px;
+    color: var(--yt-text-secondary);
+}
+
+.yt-search-description {
+    font-size: 13px;
+    color: var(--yt-text-secondary);
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.yt-search-actions {
+    display: flex;
+    align-items: flex-start;
+    padding-top: 4px;
+}
+
+.yt-search-action-btn {
+    background: none;
+    border: none;
+    color: var(--yt-text-secondary);
+    padding: 8px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.yt-search-action-btn:hover {
+    background: var(--yt-hover);
+    color: var(--yt-text);
+}
+
+.yt-empty-state {
+    text-align: center;
+    padding: 80px 20px;
+}
+
+.yt-empty-icon {
+    font-size: 64px;
+    color: var(--yt-text-secondary);
+    margin-bottom: 24px;
+}
+
+.yt-empty-state h3 {
+    font-size: 24px;
+    font-weight: 400;
+    color: var(--yt-text);
+    margin: 0 0 16px 0;
+}
+
+.yt-empty-state > p {
+    font-size: 16px;
+    color: var(--yt-text-secondary);
+    margin: 0 0 32px 0;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.yt-search-suggestions {
+    background: var(--yt-card-bg);
+    border: 1px solid var(--yt-border);
+    border-radius: 8px;
+    padding: 24px;
+    max-width: 400px;
+    margin: 0 auto;
+    text-align: left;
+}
+
+.yt-search-suggestions h4 {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--yt-text);
+    margin: 0 0 12px 0;
+}
+
+.yt-search-suggestions ul {
+    margin: 0;
+    padding-left: 20px;
+    color: var(--yt-text-secondary);
+    font-size: 14px;
+}
+
+.yt-search-suggestions li {
+    margin-bottom: 4px;
+}
+
+@media (max-width: 768px) {
+    .yt-search-results-container {
+        padding: 0 16px;
+    }
+    
+    .yt-search-result-item {
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .yt-search-thumbnail {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 16/9;
+    }
+    
+    .yt-search-actions {
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .yt-search-title {
+        font-size: 20px;
+    }
+    
+    .yt-search-video-title {
+        font-size: 18px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function addToWatchLater(videoId) {
+    if (!{{ user.is_authenticated|yesno:"true,false" }}) {
+        alert('ログインが必要です');
+        return;
+    }
+    
+    try {
+        const response = await fetch('{% url "toggle_watch_later" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                video_id: videoId
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            showNotification(data.message, 'success');
+        } else {
+            showNotification(data.error || 'エラーが発生しました', 'error');
+        }
+    } catch (error) {
+        console.error('Error adding to watch later:', error);
+        showNotification('エラーが発生しました', 'error');
+    }
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `yt-notification yt-notification-${type}`;
+    notification.innerHTML = `
+        <div class="yt-notification-content">
+            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    
+    if (!document.querySelector('#notification-styles')) {
+        const style = document.createElement('style');
+        style.id = 'notification-styles';
+        style.textContent = `
+            .yt-notification {
+                position: fixed;
+                top: 80px;
+                right: 20px;
+                z-index: 10000;
+                background: var(--yt-card-bg);
+                border: 1px solid var(--yt-border);
+                border-radius: 8px;
+                padding: 12px 16px;
+                min-width: 300px;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+                transform: translateX(100%);
+                transition: transform 0.3s ease;
+            }
+            
+            .yt-notification.show {
+                transform: translateX(0);
+            }
+            
+            .yt-notification-success {
+                border-left: 4px solid #00d563;
+            }
+            
+            .yt-notification-error {
+                border-left: 4px solid #ff4444;
+            }
+            
+            .yt-notification-content {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                color: var(--yt-text);
+            }
+            
+            .yt-notification-success i {
+                color: #00d563;
+            }
+            
+            .yt-notification-error i {
+                color: #ff4444;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.classList.add('show');
+    }, 100);
+    
+    setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, 3000);
+}
+</script>
+{% endblock %}

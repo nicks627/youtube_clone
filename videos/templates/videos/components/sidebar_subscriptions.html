@@ -1,0 +1,57 @@
+<!-- Sidebar Subscriptions Component -->
+{% if user.is_authenticated and user_subscriptions_without_folder or user_subscriptions_by_folder %}
+<div class="yt-sidebar-section">
+    <div class="yt-sidebar-section-header">
+        <span>登録チャンネル</span>
+        <a href="{% url 'subscriptions_manage' %}" class="yt-sidebar-manage">
+            <i class="fas fa-cog"></i>
+        </a>
+    </div>
+    
+    <!-- Subscriptions without folder -->
+    {% for subscription in user_subscriptions_without_folder %}
+        <a href="{% url 'channel_detail' subscription.channel.user.username %}" class="yt-sidebar-item yt-sidebar-channel">
+            <div class="yt-sidebar-avatar">
+                {% if subscription.channel.avatar %}
+                    <img src="{{ subscription.channel.avatar.url }}" alt="{{ subscription.channel.name }}">
+                {% else %}
+                    {{ subscription.channel.name|first|upper }}
+                {% endif %}
+            </div>
+            <span>{{ subscription.channel.name }}</span>
+        </a>
+    {% endfor %}
+    
+    <!-- Subscriptions by folder (collapsed) -->
+    {% for folder, folder_subscriptions in user_subscriptions_by_folder.items %}
+        <div class="yt-sidebar-folder">
+            <button class="yt-sidebar-item yt-sidebar-folder-toggle" onclick="toggleSidebarFolder({{ folder.id }})">
+                <i class="fas fa-chevron-right" id="folder-icon-{{ folder.id }}"></i>
+                <i class="fas fa-folder" style="color: {{ folder.color }}"></i>
+                <span>{{ folder.name }}</span>
+            </button>
+            <div class="yt-sidebar-folder-content" id="folder-content-{{ folder.id }}" style="display: none;">
+                {% for subscription in folder_subscriptions %}
+                    <a href="{% url 'channel_detail' subscription.channel.user.username %}" class="yt-sidebar-item yt-sidebar-channel yt-sidebar-nested">
+                        <div class="yt-sidebar-avatar">
+                            {% if subscription.channel.avatar %}
+                                <img src="{{ subscription.channel.avatar.url }}" alt="{{ subscription.channel.name }}">
+                            {% else %}
+                                {{ subscription.channel.name|first|upper }}
+                            {% endif %}
+                        </div>
+                        <span>{{ subscription.channel.name }}</span>
+                    </a>
+                {% endfor %}
+            </div>
+        </div>
+    {% endfor %}
+    
+    {% if user_subscriptions_without_folder|length > 5 or user_subscriptions_by_folder %}
+        <a href="{% url 'subscriptions_manage' %}" class="yt-sidebar-item yt-sidebar-show-more">
+            <i class="fas fa-chevron-down"></i>
+            <span>さらに表示</span>
+        </a>
+    {% endif %}
+</div>
+{% endif %}

@@ -1,0 +1,90 @@
+<!-- Video Card Component -->
+<!-- 
+Usage: {% include 'videos/components/video_card.html' with video=video %}
+Optional parameters:
+- show_channel: boolean (default: true)
+- card_size: 'small'|'medium'|'large' (default: 'medium')
+- clickable: boolean (default: true)
+-->
+{% load static %}
+
+<div class="yt-video-card {% if card_size %}yt-video-card-{{ card_size }}{% endif %}" 
+     {% if clickable|default:true %}onclick="location.href='{% url 'video_detail' video.pk %}'"{% endif %}>
+    
+    <!-- Video Thumbnail -->
+    <div class="yt-video-thumbnail">
+        {% if video.thumbnail %}
+            <img src="{{ video.thumbnail.url }}" alt="{{ video.title }}" loading="lazy">
+        {% else %}
+            <div class="yt-video-placeholder">
+                <i class="fas fa-play"></i>
+            </div>
+        {% endif %}
+        
+        {% if video.video_file %}
+            <video class="yt-video-preview" muted loop preload="none">
+                <source src="{{ video.video_file.url }}" type="video/mp4">
+            </video>
+        {% endif %}
+        
+        <div class="yt-video-duration">{{ video.get_duration_display }}</div>
+        
+        {% if video.is_paid %}
+            <div class="yt-video-paid-badge">
+                <i class="fas fa-crown"></i>
+                ¥{{ video.price|floatformat:0 }}
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- Video Info -->
+    <div class="yt-video-info">
+        {% if show_channel|default:true %}
+            <div class="yt-video-avatar">
+                {{ video.uploaded_by.username|first|upper }}
+            </div>
+        {% endif %}
+        
+        <div class="yt-video-details">
+            <h3 class="yt-video-title">{{ video.title }}</h3>
+            
+            {% if show_channel|default:true %}
+                <div class="yt-video-channel">
+                    <a href="{% url 'channel_detail' video.uploaded_by.username %}">
+                        {{ video.uploaded_by.username }}
+                    </a>
+                </div>
+            {% endif %}
+            
+            <div class="yt-video-meta">
+                <div class="yt-video-stats">
+                    <span><i class="fas fa-eye"></i> {{ video.views|floatformat:0 }} 回視聴</span>
+                    <span>•</span>
+                    <span>{{ video.uploaded_at|timesince }}前</span>
+                </div>
+                
+                <!-- Like count temporarily disabled to avoid recursion -->
+            </div>
+            
+            {% if video.description and card_size == 'large' %}
+                <div class="yt-video-description">
+                    {{ video.description|truncatechars:150 }}
+                </div>
+            {% endif %}
+        </div>
+        
+        <!-- Action Menu -->
+        <div class="yt-video-actions">
+            {% if user.is_authenticated %}
+                <button class="yt-video-action-btn" onclick="event.stopPropagation(); toggleWatchLater({{ video.id }})" title="後で見る">
+                    <i class="fas fa-clock"></i>
+                </button>
+                <button class="yt-video-action-btn" onclick="event.stopPropagation(); shareVideo({{ video.id }})" title="共有">
+                    <i class="fas fa-share"></i>
+                </button>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Video Card Styles loaded in base.html -->

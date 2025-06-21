@@ -1,0 +1,767 @@
+{% extends 'videos/base.html' %}
+
+{% block title %}動画をアップロード - YouTube Clone{% endblock %}
+
+{% block content %}
+<div class="yt-upload-container">
+    <div class="yt-upload-header">
+        <h1>動画をアップロード</h1>
+        <p class="yt-upload-subtitle">コンテンツを作成してチャンネルを成長させましょう</p>
+    </div>
+    
+    <div class="yt-upload-content">
+        <form method="post" enctype="multipart/form-data" id="uploadForm">
+            {% csrf_token %}
+            
+            <!-- Video Upload Area -->
+            <div class="yt-upload-section">
+                <div class="yt-upload-dropzone" id="dropzone">
+                    <div class="yt-upload-dropzone-content">
+                        <div class="yt-upload-icon">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                        </div>
+                        <h3>動画ファイルを選択またはドラッグ＆ドロップ</h3>
+                        <p>プライベート動画として開始されます。公開したい場合は後で変更できます。</p>
+                        <div class="yt-upload-file-input">
+                            {{ form.video_file }}
+                            <label for="{{ form.video_file.id_for_label }}" class="yt-file-input-label">
+                                ファイルを選択
+                            </label>
+                        </div>
+                        <div class="yt-upload-requirements">
+                            <p><strong>要件:</strong></p>
+                            <ul>
+                                <li>MP4形式のみ</li>
+                                <li>最大ファイルサイズ: 128 GB</li>
+                                <li>最大動画時間: 12時間</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                {% if form.video_file.errors %}
+                    <div class="yt-form-error">
+                        {% for error in form.video_file.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- Upload Progress -->
+            <div class="yt-upload-progress" id="uploadProgress" style="display: none;">
+                <div class="yt-progress-header">
+                    <h3>アップロード中...</h3>
+                    <span class="yt-progress-percent">0%</span>
+                </div>
+                <div class="yt-progress-bar">
+                    <div class="yt-progress-fill" id="progressFill"></div>
+                </div>
+                <div class="yt-progress-info">
+                    <span id="progressInfo">処理を開始しています...</span>
+                </div>
+            </div>
+            
+            <!-- Video Details -->
+            <div class="yt-upload-details" id="videoDetails">
+                <h2>詳細</h2>
+                
+                <div class="yt-form-group">
+                    <label for="{{ form.title.id_for_label }}" class="yt-form-label">
+                        タイトル（必須）
+                    </label>
+                    {{ form.title }}
+                    <div class="yt-form-helper">視聴者の注意を引く、説明的なタイトルを追加してください</div>
+                    {% if form.title.errors %}
+                        <div class="yt-form-error">
+                            {% for error in form.title.errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="yt-form-group">
+                    <label for="{{ form.description.id_for_label }}" class="yt-form-label">
+                        説明
+                    </label>
+                    {{ form.description }}
+                    <div class="yt-form-helper">動画の内容を視聴者に説明してください。適切な説明があると、検索や関連動画で見つけてもらいやすくなります。</div>
+                    {% if form.description.errors %}
+                        <div class="yt-form-error">
+                            {% for error in form.description.errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="yt-form-group">
+                    <label for="{{ form.genre.id_for_label }}" class="yt-form-label">
+                        ジャンル（必須）
+                    </label>
+                    {{ form.genre }}
+                    <div class="yt-form-helper">動画のジャンルを選択してください。視聴者が見つけやすくなります。</div>
+                    {% if form.genre.errors %}
+                        <div class="yt-form-error">
+                            {% for error in form.genre.errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="yt-form-group">
+                    <label for="{{ form.thumbnail.id_for_label }}" class="yt-form-label">
+                        サムネイル
+                    </label>
+                    <div class="yt-thumbnail-upload">
+                        <div class="yt-thumbnail-preview" id="thumbnailPreview">
+                            <div class="yt-thumbnail-placeholder">
+                                <i class="fas fa-image"></i>
+                                <span>サムネイルのプレビュー</span>
+                            </div>
+                        </div>
+                        <div class="yt-thumbnail-input">
+                            {{ form.thumbnail }}
+                            <label for="{{ form.thumbnail.id_for_label }}" class="yt-thumbnail-button">
+                                <i class="fas fa-upload"></i>
+                                サムネイルをアップロード
+                            </label>
+                            <div class="yt-form-helper">JPG、GIF、BMP、PNG形式のファイルをアップロードしてください</div>
+                        </div>
+                    </div>
+                    {% if form.thumbnail.errors %}
+                        <div class="yt-form-error">
+                            {% for error in form.thumbnail.errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Shorts Configuration -->
+                <div class="yt-form-group">
+                    <div class="yt-form-checkbox-group">
+                        <label class="yt-checkbox-label">
+                            {{ form.is_shorts }}
+                            <span class="yt-checkbox-text">
+                                <strong>ショート動画として投稿</strong>
+                                <div class="yt-form-helper">60秒以下の縦型短時間動画。自動的にショートフィードに表示されます。</div>
+                            </span>
+                        </label>
+                    </div>
+                    {% if form.is_shorts.errors %}
+                        <div class="yt-form-error">
+                            {% for error in form.is_shorts.errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Paid Content Section -->
+                <div class="yt-form-group">
+                    <div class="yt-form-checkbox-group">
+                        <label class="yt-checkbox-label">
+                            {{ form.is_paid }}
+                            <span class="yt-checkbox-text">
+                                <strong>有料コンテンツにする</strong>
+                                <div class="yt-form-helper">視聴者が動画を視聴するために料金を支払う必要があります</div>
+                            </span>
+                        </label>
+                    </div>
+                    {% if form.is_paid.errors %}
+                        <div class="yt-form-error">
+                            {% for error in form.is_paid.errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="yt-form-group" id="priceGroup" style="display: none;">
+                    <label for="{{ form.price.id_for_label }}" class="yt-form-label">
+                        価格（円）
+                    </label>
+                    {{ form.price }}
+                    <div class="yt-form-helper">100円以上で設定してください</div>
+                    {% if form.price.errors %}
+                        <div class="yt-form-error">
+                            {% for error in form.price.errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="yt-upload-actions">
+                <a href="{% url 'video_list' %}" class="yt-btn yt-btn-secondary">
+                    キャンセル
+                </a>
+                <button type="submit" class="yt-btn yt-btn-primary" id="submitBtn">
+                    <i class="fas fa-upload"></i>
+                    アップロード
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.yt-upload-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 24px;
+}
+
+.yt-upload-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.yt-upload-header h1 {
+    font-size: 32px;
+    font-weight: 600;
+    color: var(--yt-text);
+    margin: 0 0 8px 0;
+}
+
+.yt-upload-subtitle {
+    font-size: 16px;
+    color: var(--yt-text-secondary);
+    margin: 0;
+}
+
+.yt-upload-section {
+    margin-bottom: 32px;
+}
+
+.yt-upload-dropzone {
+    border: 2px dashed var(--yt-border);
+    border-radius: 12px;
+    padding: 60px 40px;
+    text-align: center;
+    background-color: var(--yt-card-bg);
+    transition: all 0.3s ease;
+}
+
+.yt-upload-dropzone:hover {
+    border-color: var(--yt-red);
+    background-color: rgba(255, 0, 0, 0.05);
+}
+
+.yt-upload-dropzone.dragover {
+    border-color: var(--yt-red);
+    background-color: rgba(255, 0, 0, 0.1);
+}
+
+.yt-upload-icon {
+    font-size: 64px;
+    color: var(--yt-text-secondary);
+    margin-bottom: 24px;
+}
+
+.yt-upload-dropzone h3 {
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--yt-text);
+    margin: 0 0 8px 0;
+}
+
+.yt-upload-dropzone p {
+    color: var(--yt-text-secondary);
+    margin: 0 0 24px 0;
+}
+
+.yt-upload-file-input {
+    margin-bottom: 24px;
+}
+
+.yt-upload-file-input input[type="file"] {
+    display: none;
+}
+
+.yt-file-input-label {
+    display: inline-block;
+    background-color: var(--yt-red);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 20px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.yt-file-input-label:hover {
+    background-color: var(--yt-dark-red);
+    color: white;
+}
+
+.yt-upload-requirements {
+    text-align: left;
+    background-color: var(--yt-bg);
+    padding: 16px;
+    border-radius: 8px;
+    margin-top: 24px;
+}
+
+.yt-upload-requirements p {
+    margin: 0 0 8px 0;
+    font-weight: 500;
+    color: var(--yt-text);
+}
+
+.yt-upload-requirements ul {
+    margin: 0;
+    padding-left: 20px;
+    color: var(--yt-text-secondary);
+}
+
+.yt-upload-requirements li {
+    margin-bottom: 4px;
+}
+
+.yt-upload-progress {
+    background-color: var(--yt-card-bg);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 32px;
+}
+
+.yt-progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.yt-progress-header h3 {
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--yt-text);
+    margin: 0;
+}
+
+.yt-progress-percent {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--yt-red);
+}
+
+.yt-progress-bar {
+    width: 100%;
+    height: 8px;
+    background-color: var(--yt-border);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 12px;
+}
+
+.yt-progress-fill {
+    height: 100%;
+    background-color: var(--yt-red);
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+.yt-progress-info {
+    color: var(--yt-text-secondary);
+    font-size: 14px;
+}
+
+.yt-upload-details h2 {
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--yt-text);
+    margin: 0 0 32px 0;
+}
+
+.yt-form-group {
+    margin-bottom: 32px;
+}
+
+.yt-form-label {
+    display: block;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--yt-text);
+    margin-bottom: 8px;
+}
+
+.yt-form-group input[type="text"],
+.yt-form-group textarea,
+.yt-form-group select {
+    width: 100%;
+    background-color: var(--yt-card-bg);
+    border: 1px solid var(--yt-border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    color: var(--yt-text);
+    font-size: 14px;
+    resize: vertical;
+}
+
+.yt-form-group input[type="text"]:focus,
+.yt-form-group textarea:focus,
+.yt-form-group select:focus {
+    outline: none;
+    border-color: var(--yt-red);
+    box-shadow: 0 0 0 2px rgba(255, 0, 0, 0.1);
+}
+
+.yt-form-helper {
+    font-size: 13px;
+    color: var(--yt-text-secondary);
+    margin-top: 8px;
+    line-height: 1.4;
+}
+
+.yt-form-error {
+    margin-top: 8px;
+}
+
+.yt-form-error p {
+    color: #ff4444;
+    font-size: 13px;
+    margin: 0;
+}
+
+.yt-thumbnail-upload {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+}
+
+.yt-thumbnail-preview {
+    width: 160px;
+    height: 90px;
+    border: 2px dashed var(--yt-border);
+    border-radius: 8px;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.yt-thumbnail-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--yt-text-secondary);
+    font-size: 12px;
+    text-align: center;
+}
+
+.yt-thumbnail-placeholder i {
+    font-size: 24px;
+    margin-bottom: 8px;
+}
+
+.yt-thumbnail-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.yt-thumbnail-input {
+    flex: 1;
+}
+
+.yt-thumbnail-input input[type="file"] {
+    display: none;
+}
+
+.yt-thumbnail-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background-color: var(--yt-border);
+    color: var(--yt-text);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    border: none;
+}
+
+.yt-thumbnail-button:hover {
+    background-color: var(--yt-hover);
+    color: var(--yt-text);
+}
+
+.yt-upload-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 16px;
+    margin-top: 40px;
+    padding-top: 24px;
+    border-top: 1px solid var(--yt-border);
+}
+
+.yt-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.yt-btn-secondary {
+    background-color: var(--yt-border);
+    color: var(--yt-text);
+}
+
+.yt-btn-secondary:hover {
+    background-color: var(--yt-hover);
+    color: var(--yt-text);
+}
+
+.yt-btn-primary {
+    background-color: var(--yt-red);
+    color: white;
+}
+
+.yt-btn-primary:hover {
+    background-color: var(--yt-dark-red);
+}
+
+.yt-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.yt-form-checkbox-group {
+    display: flex;
+    align-items: flex-start;
+}
+
+.yt-checkbox-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    cursor: pointer;
+    margin-bottom: 0;
+}
+
+.yt-checkbox-label input[type="checkbox"] {
+    width: auto;
+    margin: 0;
+    margin-top: 2px;
+}
+
+.yt-checkbox-text {
+    flex: 1;
+}
+
+.yt-checkbox-text strong {
+    display: block;
+    color: var(--yt-text);
+    margin-bottom: 4px;
+}
+
+@media (max-width: 768px) {
+    .yt-upload-container {
+        padding: 0 16px;
+    }
+    
+    .yt-upload-dropzone {
+        padding: 40px 20px;
+    }
+    
+    .yt-thumbnail-upload {
+        flex-direction: column;
+        gap: 16px;
+    }
+    
+    .yt-thumbnail-preview {
+        width: 100%;
+        max-width: 200px;
+    }
+    
+    .yt-upload-actions {
+        flex-direction: column-reverse;
+    }
+    
+    .yt-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('uploadForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.querySelector('input[type="file"][name="video_file"]');
+    const thumbnailInput = document.querySelector('input[type="file"][name="thumbnail"]');
+    const thumbnailPreview = document.getElementById('thumbnailPreview');
+    const uploadProgress = document.getElementById('uploadProgress');
+    const videoDetails = document.getElementById('videoDetails');
+    const isPaidCheckbox = document.getElementById('id_is_paid');
+    const priceGroup = document.getElementById('priceGroup');
+    const isShortsCheckbox = document.getElementById('id_is_shorts');
+    
+    // Show/hide price field based on paid content checkbox
+    if (isPaidCheckbox) {
+        isPaidCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                priceGroup.style.display = 'block';
+            } else {
+                priceGroup.style.display = 'none';
+            }
+        });
+        
+        // Initialize on page load
+        if (isPaidCheckbox.checked) {
+            priceGroup.style.display = 'block';
+        }
+    }
+    
+    // Drag and drop functionality
+    dropzone.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        dropzone.classList.add('dragover');
+    });
+    
+    dropzone.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        dropzone.classList.remove('dragover');
+    });
+    
+    dropzone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        dropzone.classList.remove('dragover');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            const file = files[0];
+            // MP4ファイルかチェック
+            if (!file.name.toLowerCase().endsWith('.mp4')) {
+                alert('MP4形式のファイルのみアップロード可能です。');
+                return;
+            }
+            if (file.type && file.type !== 'video/mp4') {
+                alert('MP4形式のファイルのみアップロード可能です。');
+                return;
+            }
+            fileInput.files = files;
+            handleVideoSelect(file);
+        }
+    });
+    
+    // File input change
+    fileInput.addEventListener('change', function(e) {
+        if (e.target.files.length > 0) {
+            const file = e.target.files[0];
+            // MP4ファイルかチェック
+            if (!file.name.toLowerCase().endsWith('.mp4')) {
+                alert('MP4形式のファイルのみアップロード可能です。');
+                e.target.value = ''; // ファイル選択をクリア
+                return;
+            }
+            if (file.type && file.type !== 'video/mp4') {
+                alert('MP4形式のファイルのみアップロード可能です。');
+                e.target.value = ''; // ファイル選択をクリア
+                return;
+            }
+            handleVideoSelect(file);
+        }
+    });
+    
+    // Thumbnail preview
+    thumbnailInput.addEventListener('change', function(e) {
+        if (e.target.files.length > 0) {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                thumbnailPreview.innerHTML = `<img src="${e.target.result}" alt="Thumbnail preview">`;
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+    
+    function handleVideoSelect(file) {
+        // Update dropzone to show selected file
+        const dropzoneContent = dropzone.querySelector('.yt-upload-dropzone-content');
+        dropzoneContent.innerHTML = `
+            <div class="yt-upload-icon">
+                <i class="fas fa-video"></i>
+            </div>
+            <h3>${file.name}</h3>
+            <p>ファイルサイズ: ${formatFileSize(file.size)}</p>
+            <div class="yt-upload-file-input">
+                <label for="${fileInput.id}" class="yt-file-input-label">
+                    別のファイルを選択
+                </label>
+            </div>
+        `;
+    }
+    
+    function formatFileSize(bytes) {
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        if (bytes === 0) return '0 Bytes';
+        const i = Math.floor(Math.log(bytes) / Math.log(1024));
+        return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
+    }
+    
+    // Form submission with progress simulation
+    form.addEventListener('submit', function(e) {
+        if (!fileInput.files.length) {
+            e.preventDefault();
+            alert('動画ファイルを選択してください。');
+            return;
+        }
+        
+        // Show progress and hide details temporarily
+        uploadProgress.style.display = 'block';
+        videoDetails.style.display = 'none';
+        submitBtn.disabled = true;
+        
+        // Simulate upload progress
+        let progress = 0;
+        const progressFill = document.getElementById('progressFill');
+        const progressPercent = document.querySelector('.yt-progress-percent');
+        const progressInfo = document.getElementById('progressInfo');
+        
+        const interval = setInterval(function() {
+            progress += Math.random() * 15;
+            if (progress > 95) progress = 95;
+            
+            progressFill.style.width = progress + '%';
+            progressPercent.textContent = Math.round(progress) + '%';
+            
+            if (progress < 30) {
+                progressInfo.textContent = 'ファイルをアップロード中...';
+            } else if (progress < 70) {
+                progressInfo.textContent = '動画を処理中...';
+            } else {
+                progressInfo.textContent = '最終確認中...';
+            }
+        }, 200);
+        
+        // Let the form submit normally after a short delay
+        setTimeout(function() {
+            clearInterval(interval);
+            progressFill.style.width = '100%';
+            progressPercent.textContent = '100%';
+            progressInfo.textContent = 'アップロード完了！';
+        }, 3000);
+    });
+});
+</script>
+{% endblock %}

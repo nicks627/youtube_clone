@@ -1,0 +1,414 @@
+{% extends 'videos/base.html' %}
+
+{% block title %}あなたの動画 - YouTube Clone{% endblock %}
+
+{% block content %}
+<div class="yt-main-content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="yt-page-header">
+                    <h1 class="yt-page-title">
+                        <i class="fas fa-video"></i>
+                        あなたの動画
+                    </h1>
+                    {% if total_videos > 0 %}
+                    <div class="yt-page-stats">
+                        <span class="yt-stat-item">
+                            <i class="fas fa-video"></i>
+                            {{ total_videos }} 本の動画
+                        </span>
+                        <span class="yt-stat-item">
+                            <i class="fas fa-eye"></i>
+                            {{ total_views|floatformat:0 }} 回視聴
+                        </span>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                {% if not videos %}
+                    <!-- No videos uploaded yet -->
+                    <div class="yt-empty-state">
+                        <div class="yt-empty-content">
+                            <i class="fas fa-video fa-3x text-muted mb-3"></i>
+                            <h3>まだ動画をアップロードしていません</h3>
+                            <p class="text-muted">
+                                動画をアップロードして、あなたのコンテンツを世界と共有しましょう！<br>
+                                MP4形式のファイルをアップロードできます。
+                            </p>
+                            <a href="{% url 'upload_video' %}" class="btn btn-primary btn-lg mt-3">
+                                <i class="fas fa-plus"></i>
+                                動画をアップロード
+                            </a>
+                        </div>
+                        
+                        <div class="yt-upload-tips mt-5">
+                            <h4>動画アップロードのコツ</h4>
+                            <div class="row mt-3">
+                                <div class="col-md-4">
+                                    <div class="yt-tip-card">
+                                        <i class="fas fa-eye fa-2x mb-3"></i>
+                                        <h5>魅力的なタイトル</h5>
+                                        <p>視聴者の興味を引くタイトルを付けましょう</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="yt-tip-card">
+                                        <i class="fas fa-image fa-2x mb-3"></i>
+                                        <h5>サムネイル画像</h5>
+                                        <p>クリックしたくなるサムネイルを設定しましょう</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="yt-tip-card">
+                                        <i class="fas fa-tags fa-2x mb-3"></i>
+                                        <h5>適切なジャンル</h5>
+                                        <p>動画の内容に合ったジャンルを選択しましょう</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <!-- Show uploaded videos -->
+                    <div class="yt-video-management">
+                        <div class="yt-actions-bar">
+                            <a href="{% url 'upload_video' %}" class="btn btn-primary">
+                                <i class="fas fa-plus"></i>
+                                新しい動画をアップロード
+                            </a>
+                            <div class="yt-view-options">
+                                <button class="btn btn-outline-secondary" id="gridView" onclick="setViewMode('grid')">
+                                    <i class="fas fa-th"></i>
+                                </button>
+                                <button class="btn btn-outline-secondary" id="listView" onclick="setViewMode('list')">
+                                    <i class="fas fa-list"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="yt-videos-container" id="videosContainer">
+                            <div class="row" id="videoGrid">
+                                {% for video in videos %}
+                                <div class="col-lg-3 col-md-4 col-sm-6 mb-4 video-item">
+                                    <div class="yt-video-card">
+                                        <a href="{% url 'video_detail' video.pk %}" class="yt-video-link">
+                                            <div class="yt-video-thumbnail">
+                                                {% if video.thumbnail %}
+                                                    <img src="{{ video.thumbnail.url }}" alt="{{ video.title }}">
+                                                {% else %}
+                                                    <div class="yt-default-thumbnail">
+                                                        <i class="fas fa-play"></i>
+                                                    </div>
+                                                {% endif %}
+                                                <div class="yt-video-duration">
+                                                    <span>--:--</span>
+                                                </div>
+                                            </div>
+                                        </a>
+                                        <div class="yt-video-info">
+                                            <h6 class="yt-video-title">
+                                                <a href="{% url 'video_detail' video.pk %}">{{ video.title }}</a>
+                                            </h6>
+                                            <p class="yt-video-stats">
+                                                <span class="yt-stat-item">
+                                                    <i class="fas fa-eye"></i>
+                                                    {{ video.views|floatformat:0 }} 回視聴
+                                                </span>
+                                                <span class="yt-stat-item">
+                                                    <i class="fas fa-thumbs-up"></i>
+                                                    {{ video.get_like_count }}
+                                                </span>
+                                                <span class="yt-stat-item">
+                                                    <i class="fas fa-comment"></i>
+                                                    {{ video.get_comment_count }}
+                                                </span>
+                                            </p>
+                                            <p class="yt-video-meta">
+                                                <span class="yt-genre-badge">{{ video.get_genre_display }}</span>
+                                                <span class="yt-upload-date">{{ video.uploaded_at|date:"Y年n月j日" }}</span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.yt-page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #333;
+}
+
+.yt-page-stats {
+    display: flex;
+    gap: 20px;
+}
+
+.yt-stat-item {
+    color: #aaa;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.yt-empty-state {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.yt-empty-content {
+    margin-bottom: 40px;
+}
+
+.yt-upload-tips {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.yt-tip-card {
+    background: #1f1f1f;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    height: 100%;
+    border: 1px solid #333;
+    color: #fff;
+}
+
+.yt-tip-card i {
+    color: #ff0000;
+}
+
+.yt-tip-card h5 {
+    color: #fff;
+    margin-bottom: 10px;
+}
+
+.yt-tip-card p {
+    color: #aaa;
+    font-size: 14px;
+    margin: 0;
+}
+
+.yt-actions-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #1f1f1f;
+    border-radius: 8px;
+}
+
+.yt-view-options {
+    display: flex;
+    gap: 5px;
+}
+
+.yt-view-options button {
+    padding: 8px 12px;
+}
+
+.yt-view-options button.active {
+    background: #ff0000;
+    border-color: #ff0000;
+    color: white;
+}
+
+.yt-video-card {
+    background: #1f1f1f;
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    height: 100%;
+    border: 1px solid #333;
+}
+
+.yt-video-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    border-color: #666;
+}
+
+.yt-video-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+
+.yt-video-thumbnail {
+    position: relative;
+    width: 100%;
+    height: 180px;
+    overflow: hidden;
+}
+
+.yt-video-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.yt-default-thumbnail {
+    width: 100%;
+    height: 100%;
+    background: #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+    font-size: 32px;
+}
+
+.yt-video-duration {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    background: rgba(0,0,0,0.8);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.yt-video-info {
+    padding: 15px;
+}
+
+.yt-video-title {
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    line-height: 1.3;
+}
+
+.yt-video-title a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.yt-video-title a:hover {
+    color: #ff0000;
+}
+
+.yt-video-stats {
+    color: #aaa;
+    font-size: 12px;
+    margin-bottom: 8px;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.yt-video-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 0;
+}
+
+.yt-genre-badge {
+    background: #ff0000;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.yt-upload-date {
+    color: #aaa;
+    font-size: 11px;
+}
+
+/* List view styles */
+.list-view .video-item {
+    width: 100%;
+    max-width: none;
+}
+
+.list-view .yt-video-card {
+    display: flex;
+    height: 120px;
+}
+
+.list-view .yt-video-thumbnail {
+    width: 200px;
+    height: 120px;
+    flex-shrink: 0;
+}
+
+.list-view .yt-video-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+@media (max-width: 768px) {
+    .yt-page-header {
+        flex-direction: column;
+        gap: 15px;
+        align-items: stretch;
+        text-align: center;
+    }
+    
+    .yt-actions-bar {
+        flex-direction: column;
+        gap: 15px;
+        align-items: stretch;
+    }
+    
+    .list-view .yt-video-card {
+        flex-direction: column;
+        height: auto;
+    }
+    
+    .list-view .yt-video-thumbnail {
+        width: 100%;
+        height: 180px;
+    }
+}
+</style>
+
+<script>
+function setViewMode(mode) {
+    const container = document.getElementById('videosContainer');
+    const gridBtn = document.getElementById('gridView');
+    const listBtn = document.getElementById('listView');
+    
+    if (mode === 'list') {
+        container.classList.add('list-view');
+        listBtn.classList.add('active');
+        gridBtn.classList.remove('active');
+        localStorage.setItem('videoViewMode', 'list');
+    } else {
+        container.classList.remove('list-view');
+        gridBtn.classList.add('active');
+        listBtn.classList.remove('active');
+        localStorage.setItem('videoViewMode', 'grid');
+    }
+}
+
+// Initialize view mode from localStorage
+document.addEventListener('DOMContentLoaded', function() {
+    const savedMode = localStorage.getItem('videoViewMode') || 'grid';
+    setViewMode(savedMode);
+});
+</script>
+{% endblock %}

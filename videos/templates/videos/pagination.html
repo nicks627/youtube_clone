@@ -1,0 +1,109 @@
+<!-- Pagination Component -->
+{% if is_paginated %}
+<nav aria-label="ページネーション" class="mt-4">
+    <div class="d-flex justify-content-center">
+        <ul class="pagination pagination-lg">
+            {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if current_genre %}&genre={{ current_genre }}{% endif %}" aria-label="最初のページへ">
+                        <span aria-hidden="true">&laquo;&laquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if current_genre %}&genre={{ current_genre }}{% endif %}" aria-label="前のページへ">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">&laquo;&laquo;</span>
+                </li>
+                <li class="page-item disabled">
+                    <span class="page-link">&laquo;</span>
+                </li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}<span class="sr-only">(現在のページ)</span></span>
+                    </li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if current_genre %}&genre={{ current_genre }}{% endif %}">{{ num }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if current_genre %}&genre={{ current_genre }}{% endif %}" aria-label="次のページへ">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if current_genre %}&genre={{ current_genre }}{% endif %}" aria-label="最後のページへ">
+                        <span aria-hidden="true">&raquo;&raquo;</span>
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">&raquo;</span>
+                </li>
+                <li class="page-item disabled">
+                    <span class="page-link">&raquo;&raquo;</span>
+                </li>
+            {% endif %}
+        </ul>
+    </div>
+    
+    <!-- Page info -->
+    <div class="text-center mt-2">
+        <small class="text-muted">
+            {{ page_obj.start_index }}〜{{ page_obj.end_index }}件を表示 (全{{ page_obj.paginator.count }}件中)
+        </small>
+    </div>
+</nav>
+
+<style>
+.pagination {
+    margin-bottom: 0;
+}
+
+.pagination .page-link {
+    color: var(--yt-text);
+    background-color: var(--yt-bg);
+    border: 1px solid var(--yt-border);
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+}
+
+.pagination .page-link:hover {
+    color: var(--yt-link-hover);
+    background-color: var(--yt-hover-bg);
+    border-color: var(--yt-border-hover);
+}
+
+.pagination .page-item.active .page-link {
+    color: white;
+    background-color: var(--yt-red);
+    border-color: var(--yt-red);
+}
+
+.pagination .page-item.disabled .page-link {
+    color: var(--yt-text-muted);
+    background-color: var(--yt-bg);
+    border-color: var(--yt-border);
+}
+
+@media (max-width: 768px) {
+    .pagination-lg {
+        font-size: 0.875rem;
+    }
+    
+    .pagination-lg .page-link {
+        padding: 0.5rem 0.75rem;
+    }
+}
+</style>
+{% endif %}

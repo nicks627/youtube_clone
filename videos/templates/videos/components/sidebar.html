@@ -1,0 +1,75 @@
+<!-- Sidebar Component -->
+{% load static %}
+
+<nav class="yt-sidebar" id="sidebar">
+    <!-- Main Navigation -->
+    <div class="yt-sidebar-section">
+        <a href="{% url 'video_list' %}" class="yt-sidebar-item active">
+            <i class="fas fa-home"></i>
+            <span>ホーム</span>
+        </a>
+        <a href="{% url 'explore' %}" class="yt-sidebar-item">
+            <i class="fas fa-compass"></i>
+            <span>探索</span>
+        </a>
+        <a href="{% url 'shorts' %}" class="yt-sidebar-item">
+            <i class="fas fa-play-circle"></i>
+            <span>ショート</span>
+        </a>
+        <a href="{% url 'subscriptions' %}" class="yt-sidebar-item">
+            <i class="fas fa-list"></i>
+            <span>登録チャンネル</span>
+        </a>
+    </div>
+    
+    <!-- User Library (Authenticated users only) -->
+    {% if user.is_authenticated %}
+    <div class="yt-sidebar-section">
+        <a href="{% url 'your_videos' %}" class="yt-sidebar-item">
+            <i class="fas fa-video"></i>
+            <span>あなたの動画</span>
+        </a>
+        <a href="{% url 'history' %}" class="yt-sidebar-item">
+            <i class="fas fa-history"></i>
+            <span>履歴</span>
+        </a>
+        <a href="{% url 'watch_later' %}" class="yt-sidebar-item">
+            <i class="fas fa-clock"></i>
+            <span>後で見る</span>
+        </a>
+        <a href="{% url 'liked_videos' %}" class="yt-sidebar-item">
+            <i class="fas fa-thumbs-up"></i>
+            <span>高評価した動画</span>
+        </a>
+    </div>
+    {% endif %}
+    
+    <!-- Subscriptions Section -->
+    {% include 'videos/components/sidebar_subscriptions.html' %}
+    
+    <!-- Browse Categories -->
+    <div class="yt-sidebar-section">
+        <a href="{% url 'trending' %}" class="yt-sidebar-item">
+            <i class="fas fa-fire"></i>
+            <span>急上昇</span>
+        </a>
+        <a href="{% url 'video_list_by_genre' 'music' %}" class="yt-sidebar-item">
+            <i class="fas fa-music"></i>
+            <span>音楽</span>
+        </a>
+        <a href="{% url 'video_list_by_genre' 'gaming' %}" class="yt-sidebar-item">
+            <i class="fas fa-gamepad"></i>
+            <span>ゲーム</span>
+        </a>
+        <a href="{% url 'video_list_by_genre' 'news' %}" class="yt-sidebar-item">
+            <i class="fas fa-newspaper"></i>
+            <span>ニュース</span>
+        </a>
+        <a href="{% url 'video_list_by_genre' 'education' %}" class="yt-sidebar-item">
+            <i class="fas fa-graduation-cap"></i>
+            <span>教育</span>
+        </a>
+    </div>
+</nav>
+
+<!-- Sidebar Styles and JavaScript loaded in base.html -->

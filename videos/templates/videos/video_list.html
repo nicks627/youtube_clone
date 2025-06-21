@@ -1,0 +1,284 @@
+{% extends 'videos/base.html' %}
+
+{% block title %}YouTube Clone{% endblock %}
+
+{% block content %}
+<!-- Loading skeleton for initial load -->
+<div id="loading-skeleton" class="yt-loading-container" style="display: none;">
+    <div class="yt-video-grid">
+        {% for i in "123456789012" %}
+        <div class="yt-video-card yt-skeleton-card">
+            <div class="yt-skeleton yt-skeleton-thumbnail"></div>
+            <div class="yt-video-info">
+                <div class="yt-skeleton yt-skeleton-avatar"></div>
+                <div class="yt-video-details">
+                    <div class="yt-skeleton yt-skeleton-title"></div>
+                    <div class="yt-skeleton yt-skeleton-meta"></div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+{% if videos %}
+    <div class="yt-video-grid" id="main-content">
+        {% for video in videos %}
+            <a href="{% url 'video_detail' video.pk %}" class="yt-video-card" data-video-id="{{ video.pk }}" style="text-decoration: none; color: inherit; display: block; border: 2px solid red;">
+                <div class="yt-video-thumbnail">
+                    {% if video.thumbnail %}
+                        <img src="{{ video.thumbnail.url }}" alt="{{ video.title }}" loading="lazy">
+                    {% else %}
+                        <div style="width: 100%; height: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-play" style="font-size: 48px; color: rgba(255,255,255,0.8);"></i>
+                        </div>
+                    {% endif %}
+                    <div class="yt-video-duration">{{ video.get_duration_display }}</div>
+                </div>
+                <div class="yt-video-info">
+                    <div class="yt-video-avatar">
+                        {{ video.uploaded_by.username|first|upper }}
+                    </div>
+                    <div class="yt-video-details">
+                        <h3 class="yt-video-title">{{ video.title }}</h3>
+                        <div class="yt-video-meta">
+                            <div class="yt-video-channel">{{ video.uploaded_by.username }}</div>
+                            <div class="yt-video-stats">
+                                <span>{{ video.views|floatformat:0 }} 回視聴</span>
+                                <span>•</span>
+                                <span>{{ video.uploaded_at|timesince }}前</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="text-center py-5">
+        <div class="mb-4">
+            <i class="fab fa-youtube" style="font-size: 72px; color: var(--yt-red); opacity: 0.5;"></i>
+        </div>
+        <h3 class="mb-3">動画がまだありません</h3>
+        <p class="text-muted mb-4">最初の動画をアップロードして、コミュニティを始めましょう！</p>
+        <a href="{% url 'upload_video' %}" class="btn btn-primary btn-lg">
+            <i class="fas fa-plus me-2"></i>動画をアップロード
+        </a>
+    </div>
+{% endif %}
+
+{% if shorts_videos %}
+<!-- ショートセクション -->
+<div style="margin: 48px 0;">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
+        <h2 style="font-size: 24px; font-weight: 600; color: var(--yt-text); margin: 0; display: flex; align-items: center; gap: 8px;">
+            <i class="fas fa-play-circle" style="color: var(--yt-red);"></i>
+            ショート
+        </h2>
+        <a href="{% url 'shorts' %}" style="display: flex; align-items: center; gap: 8px; color: var(--yt-text-secondary); text-decoration: none; font-size: 14px; font-weight: 500;">
+            <span>すべて見る</span>
+            <i class="fas fa-chevron-right"></i>
+        </a>
+    </div>
+    <div class="yt-shorts-grid">
+        {% for short in shorts_videos %}
+            <a href="{% url 'shorts' %}" class="yt-shorts-card" style="text-decoration: none; color: inherit; display: block;">
+                <div class="yt-shorts-thumbnail">
+                    {% if short.thumbnail %}
+                        <img src="{{ short.thumbnail.url }}" alt="{{ short.title }}" loading="lazy">
+                    {% else %}
+                        <div style="width: 100%; height: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-play" style="font-size: 32px; color: rgba(255,255,255,0.8);"></i>
+                        </div>
+                    {% endif %}
+                    <div class="yt-shorts-duration">{{ short.get_duration_display }}</div>
+                    <div class="yt-shorts-overlay">
+                        <i class="fas fa-play"></i>
+                    </div>
+                </div>
+                <div class="yt-shorts-info">
+                    <div class="yt-shorts-title">{{ short.title|truncatechars:60 }}</div>
+                    <div class="yt-shorts-views">{{ short.views|floatformat:0 }} 回視聴</div>
+                </div>
+            </a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Add pagination -->
+{% include 'videos/pagination.html' %}
+{% endblock %}
+
+{% block extra_js %}
+<style>
+/* Loading skeleton styles */
+.yt-skeleton-card {
+    pointer-events: none;
+}
+
+.yt-skeleton-thumbnail {
+    width: 100%;
+    height: 180px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+}
+
+.yt-skeleton-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    margin-right: 12px;
+}
+
+.yt-skeleton-title {
+    height: 20px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    width: 90%;
+}
+
+.yt-skeleton-meta {
+    height: 14px;
+    border-radius: 4px;
+    width: 70%;
+}
+
+/* Enhanced grid animations */
+.yt-video-grid {
+    animation: gridFadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Ensure video cards are clickable */
+.yt-video-card {
+    cursor: pointer !important;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+
+@keyframes gridFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Shorts section enhancements */
+.yt-shorts-grid {
+    animation: slideInFromRight 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.yt-shorts-card {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+}
+
+.yt-shorts-card:hover {
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+}
+
+.yt-shorts-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, transparent 30%, rgba(255,0,0,0.1) 50%, transparent 70%);
+    transform: translateX(-100%);
+    transition: transform 0.6s ease;
+    z-index: 1;
+}
+
+.yt-shorts-card:hover::before {
+    transform: translateX(100%);
+}
+
+@keyframes slideInFromRight {
+    from {
+        opacity: 0;
+        transform: translateX(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Click feedback animation */
+.yt-click-feedback {
+    animation: clickPulse 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes clickPulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(0.95);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Simplified hover effect for better click functionality */
+.yt-video-card:hover {
+    transform: translateY(-4px) scale(1.02);
+}
+
+/* Page transition */
+.page-transition {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--yt-bg);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.page-transition.active {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--yt-border);
+    border-top-color: var(--yt-red);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+</style>
+
+<script>
+// Simple debugging script
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Video list page loaded successfully');
+    console.log('Found video cards:', document.querySelectorAll('.yt-video-card').length);
+});
+</script>
+{% endblock %}

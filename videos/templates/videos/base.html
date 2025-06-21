@@ -1,0 +1,1807 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}YouTube Clone{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --yt-red: #ff0000;
+            --yt-dark-red: #cc0000;
+            --yt-bg: #0f0f0f;
+            --yt-card-bg: #1a1a1a;
+            --yt-text: #ffffff;
+            --yt-text-secondary: #aaaaaa;
+            --yt-border: #303030;
+            --yt-hover: #272727;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--yt-bg);
+            color: var(--yt-text);
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Header */
+        .yt-header {
+            background-color: var(--yt-bg);
+            border-bottom: 1px solid var(--yt-border);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 2000;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+        }
+
+        .yt-header-left {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .yt-menu-button {
+            background: none;
+            border: none;
+            color: var(--yt-text);
+            padding: 8px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .yt-menu-button:hover {
+            background-color: var(--yt-hover);
+        }
+
+        .yt-logo {
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            color: var(--yt-text);
+        }
+
+        .yt-logo i {
+            color: var(--yt-red);
+            font-size: 24px;
+            margin-right: 8px;
+        }
+
+        .yt-logo-text {
+            font-size: 20px;
+            font-weight: 500;
+            letter-spacing: -0.5px;
+        }
+
+        .yt-header-center {
+            flex: 1;
+            max-width: 640px;
+            margin: 0 40px;
+            display: flex;
+            align-items: center;
+        }
+
+        .yt-search-container {
+            display: flex;
+            width: 100%;
+            max-width: 640px;
+        }
+
+        .yt-search-input {
+            flex: 1;
+            background-color: var(--yt-bg);
+            border: 1px solid var(--yt-border);
+            color: var(--yt-text);
+            padding: 0 16px;
+            height: 40px;
+            border-radius: 20px 0 0 20px;
+            outline: none;
+            font-size: 16px;
+        }
+
+        .yt-search-input:focus {
+            border-color: #1c62b9;
+        }
+
+        .yt-search-button {
+            background-color: var(--yt-hover);
+            border: 1px solid var(--yt-border);
+            border-left: none;
+            color: var(--yt-text);
+            padding: 0 20px;
+            height: 40px;
+            border-radius: 0 20px 20px 0;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .yt-search-button:hover {
+            background-color: #3f3f3f;
+        }
+
+        .yt-header-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: auto;
+        }
+
+        .yt-header-button {
+            background: none;
+            border: none;
+            color: var(--yt-text);
+            padding: 8px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .yt-header-button:hover {
+            background-color: var(--yt-hover);
+        }
+
+        .yt-upload-button {
+            background: linear-gradient(135deg, var(--yt-red) 0%, #ff3333 100%);
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 22px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            box-shadow: 0 2px 8px rgba(255, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .yt-upload-button:hover {
+            background: linear-gradient(135deg, #cc0000 0%, #ff0000 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(255, 0, 0, 0.4);
+            color: white;
+        }
+
+        .yt-upload-button:active {
+            transform: translateY(0);
+        }
+
+        .yt-upload-button i {
+            font-size: 16px;
+        }
+
+        /* Sidebar */
+        .yt-sidebar {
+            position: fixed;
+            top: 56px;
+            left: 0;
+            width: 240px;
+            height: calc(100vh - 56px);
+            background-color: var(--yt-bg);
+            overflow-y: auto;
+            z-index: 1000;
+            transition: transform 0.2s;
+            border-right: 1px solid var(--yt-border);
+        }
+
+        .yt-sidebar.collapsed {
+            transform: translateX(-240px);
+        }
+
+        .yt-sidebar-section {
+            padding: 12px 0;
+            border-bottom: 1px solid var(--yt-border);
+        }
+
+        .yt-sidebar-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 24px;
+            color: var(--yt-text);
+            text-decoration: none;
+            transition: background-color 0.2s;
+            font-size: 14px;
+            font-weight: 400;
+        }
+
+        .yt-sidebar-item:hover {
+            background-color: var(--yt-hover);
+            color: var(--yt-text);
+        }
+
+        .yt-sidebar-item.active {
+            background-color: var(--yt-hover);
+            font-weight: 500;
+        }
+
+        .yt-sidebar-item i {
+            width: 24px;
+            margin-right: 24px;
+            font-size: 20px;
+        }
+
+        /* Main Content */
+        .yt-main {
+            margin-left: 240px;
+            margin-top: 56px;
+            padding: 24px;
+            min-height: calc(100vh - 56px);
+            transition: margin-left 0.2s;
+        }
+
+        .yt-main.expanded {
+            margin-left: 0;
+        }
+
+        /* Video Grid */
+        .yt-video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+            margin-top: 24px;
+        }
+
+        .yt-video-card {
+            background: transparent;
+            border-radius: 12px;
+            overflow: hidden;
+            transition: transform 0.2s;
+            cursor: pointer;
+        }
+
+        .yt-video-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .yt-video-thumbnail {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16/9;
+            background-color: var(--yt-card-bg);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .yt-video-thumbnail img,
+        .yt-video-thumbnail video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .yt-video-preview {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .yt-video-card:hover .yt-video-preview {
+            opacity: 1;
+        }
+
+        .yt-video-duration {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .yt-video-info {
+            padding: 12px 0;
+            display: flex;
+            gap: 12px;
+        }
+
+        .yt-video-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background-color: var(--yt-card-bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 500;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .yt-video-details {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .yt-video-title {
+            font-size: 16px;
+            font-weight: 500;
+            line-height: 1.4;
+            margin: 0 0 4px 0;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            color: var(--yt-text);
+        }
+
+        .yt-video-meta {
+            color: var(--yt-text-secondary);
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .yt-video-channel {
+            color: var(--yt-text-secondary);
+            margin-bottom: 2px;
+        }
+
+        .yt-video-stats {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* Shorts Grid */
+        .yt-shorts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .yt-shorts-card {
+            background: transparent;
+            border-radius: 12px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .yt-shorts-card:hover {
+            transform: scale(1.05);
+        }
+
+        .yt-shorts-thumbnail {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 9/16;
+            background-color: var(--yt-card-bg);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .yt-shorts-thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .yt-shorts-duration {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .yt-shorts-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 40px;
+            height: 40px;
+            background-color: rgba(0, 0, 0, 0.6);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 16px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .yt-shorts-card:hover .yt-shorts-overlay {
+            opacity: 1;
+        }
+
+        .yt-shorts-info {
+            padding: 12px 0;
+        }
+
+        .yt-shorts-title {
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 1.3;
+            margin-bottom: 4px;
+            color: var(--yt-text);
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .yt-shorts-views {
+            font-size: 12px;
+            color: var(--yt-text-secondary);
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .yt-video-grid {
+                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+                gap: 16px;
+            }
+            
+            .yt-shorts-grid {
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+                gap: 12px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .yt-sidebar {
+                transform: translateX(-240px);
+            }
+            
+            .yt-main {
+                margin-left: 0;
+            }
+
+            .yt-header-center {
+                display: none;
+            }
+
+            .yt-video-grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+            
+            .yt-shorts-grid {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                gap: 10px;
+            }
+            
+            .yt-header-right {
+                gap: 4px;
+            }
+            
+            .yt-upload-button span {
+                display: none;
+            }
+            
+            .yt-auth-button span {
+                display: none;
+            }
+            
+            .yt-notification-dropdown {
+                width: 300px;
+                right: -50px;
+            }
+        }
+
+        /* Rich UX Enhancements */
+        .card {
+            background-color: var(--yt-card-bg);
+            border: 1px solid var(--yt-border);
+            color: var(--yt-text);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* Smooth page transitions */
+        .yt-main {
+            animation: fadeInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        /* Hover effects for buttons */
+        .yt-search-button {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .yt-search-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(255, 0, 0, 0.2);
+        }
+        
+        /* Sidebar item hover effects */
+        .yt-sidebar-item {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+        
+        .yt-sidebar-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: var(--yt-red);
+            transform: scaleY(0);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .yt-sidebar-item:hover::before {
+            transform: scaleY(1);
+        }
+        
+        .yt-sidebar-item:hover {
+            background-color: var(--yt-hover);
+            transform: translateX(5px);
+        }
+        
+        .yt-sidebar-item.active::before {
+            transform: scaleY(1);
+        }
+        
+        /* Notification badge pulse */
+        .yt-notification-badge {
+            animation: pulse 2s infinite;
+        }
+        
+        /* Ripple effect for clickable items */
+        .yt-ripple {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .yt-ripple::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        
+        .yt-ripple:active::after {
+            width: 200px;
+            height: 200px;
+        }
+        
+        /* Loading skeleton animation */
+        .yt-skeleton {
+            background: linear-gradient(90deg, 
+                var(--yt-border) 25%, 
+                var(--yt-hover) 50%, 
+                var(--yt-border) 75%);
+            background-size: 200% 100%;
+            animation: skeleton-loading 1.5s infinite;
+        }
+        
+        /* Smooth scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--yt-bg);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--yt-border);
+            border-radius: 4px;
+            transition: background 0.3s ease;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--yt-hover);
+        }
+        
+        /* Enhanced focus states */
+        input:focus, textarea:focus, select:focus, button:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(255, 0, 0, 0.1);
+        }
+        
+        /* Glassmorphism header */
+        .yt-header {
+            backdrop-filter: blur(10px);
+            background: rgba(15, 15, 15, 0.8);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Keyframe animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.1);
+                opacity: 0.8;
+            }
+        }
+        
+        @keyframes skeleton-loading {
+            0% {
+                background-position: -200% 0;
+            }
+            100% {
+                background-position: 200% 0;
+            }
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(-100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        /* Simplified video card styles for debugging */
+        .yt-video-card {
+            opacity: 1 !important;
+            transition: none !important;
+            border-radius: 12px;
+            overflow: hidden;
+            background: var(--yt-card-bg);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            cursor: pointer !important;
+            pointer-events: auto !important;
+        }
+        
+        .yt-video-card:hover {
+            /* Hover effects disabled for debugging */
+        }
+        
+        .yt-video-card:nth-child(1) { animation-delay: 0.1s; }
+        .yt-video-card:nth-child(2) { animation-delay: 0.2s; }
+        .yt-video-card:nth-child(3) { animation-delay: 0.3s; }
+        .yt-video-card:nth-child(4) { animation-delay: 0.4s; }
+        .yt-video-card:nth-child(5) { animation-delay: 0.5s; }
+        .yt-video-card:nth-child(6) { animation-delay: 0.6s; }
+        
+        /* Video thumbnail enhancements */
+        .yt-video-thumbnail {
+            position: relative;
+            overflow: hidden;
+            border-radius: 8px;
+        }
+        
+        .yt-video-thumbnail::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%);
+            transform: translateX(-100%);
+            transition: transform 0.6s ease;
+            z-index: 1;
+        }
+        
+        .yt-video-card:hover .yt-video-thumbnail::before {
+            transform: translateX(100%);
+        }
+        
+        .yt-video-thumbnail img {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .yt-video-card:hover .yt-video-thumbnail img {
+            transform: scale(1.05);
+        }
+        
+        /* Video info animations */
+        .yt-video-info {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .yt-video-card:hover .yt-video-info {
+            transform: translateY(-2px);
+        }
+        
+        .yt-video-title {
+            transition: color 0.3s ease;
+        }
+        
+        .yt-video-card:hover .yt-video-title {
+            color: var(--yt-red);
+        }
+        
+        /* Avatar hover effect */
+        .yt-video-avatar {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .yt-video-card:hover .yt-video-avatar {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(255, 0, 0, 0.3);
+        }
+
+        .form-control, .form-select {
+            background-color: var(--yt-card-bg);
+            border-color: var(--yt-border);
+            color: var(--yt-text);
+        }
+
+        .form-control:focus, .form-select:focus {
+            background-color: var(--yt-card-bg);
+            border-color: #1c62b9;
+            color: var(--yt-text);
+            box-shadow: 0 0 0 0.2rem rgba(28, 98, 185, 0.25);
+        }
+
+        .btn-primary {
+            background-color: var(--yt-red);
+            border-color: var(--yt-red);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--yt-dark-red);
+            border-color: var(--yt-dark-red);
+        }
+        
+        /* Sidebar Subscriptions */
+        .yt-sidebar-section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 24px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--yt-text);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .yt-sidebar-manage {
+            color: var(--yt-text-secondary);
+            text-decoration: none;
+            padding: 4px;
+            border-radius: 50%;
+            transition: all 0.2s;
+        }
+        
+        .yt-sidebar-manage:hover {
+            color: var(--yt-text);
+            background-color: var(--yt-hover);
+        }
+        
+        .yt-sidebar-channel {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .yt-sidebar-avatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--yt-red);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 500;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+        
+        .yt-sidebar-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .yt-sidebar-folder {
+            margin: 0;
+        }
+        
+        .yt-sidebar-folder-toggle {
+            width: 100%;
+            background: none;
+            border: none;
+            text-align: left;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 24px;
+            color: var(--yt-text);
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+        
+        .yt-sidebar-folder-toggle:hover {
+            background-color: var(--yt-hover);
+        }
+        
+        .yt-sidebar-folder-toggle i:first-child {
+            width: 12px;
+            transition: transform 0.2s;
+        }
+        
+        .yt-sidebar-folder.expanded .yt-sidebar-folder-toggle i:first-child {
+            transform: rotate(90deg);
+        }
+        
+        .yt-sidebar-folder-content {
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+        
+        .yt-sidebar-nested {
+            padding-left: 48px;
+        }
+        
+        .yt-sidebar-show-more {
+            color: var(--yt-text-secondary) !important;
+            font-size: 13px;
+        }
+        
+        .yt-sidebar-show-more:hover {
+            color: var(--yt-text) !important;
+        }
+        
+        /* User Menu */
+        .yt-user-menu {
+            position: relative;
+        }
+        
+        .yt-user-dropdown {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            background-color: var(--yt-card-bg);
+            border: 1px solid var(--yt-border);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            width: 300px;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.2s ease;
+        }
+        
+        .yt-user-dropdown.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        
+        .yt-user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px;
+        }
+        
+        .yt-user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--yt-red);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 500;
+            flex-shrink: 0;
+        }
+        
+        .yt-user-details {
+            flex: 1;
+        }
+        
+        .yt-user-name {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--yt-text);
+            margin-bottom: 2px;
+        }
+        
+        .yt-user-email {
+            font-size: 14px;
+            color: var(--yt-text-secondary);
+        }
+        
+        .yt-dropdown-divider {
+            margin: 0;
+            border: none;
+            border-top: 1px solid var(--yt-border);
+        }
+        
+        .yt-dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            color: var(--yt-text);
+            text-decoration: none;
+            transition: background-color 0.2s;
+        }
+        
+        .yt-dropdown-item:hover {
+            background-color: var(--yt-hover);
+            color: var(--yt-text);
+        }
+        
+        .yt-dropdown-item i {
+            width: 20px;
+            font-size: 16px;
+        }
+        
+        /* Auth Buttons */
+        .yt-auth-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 18px;
+            font-size: 14px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.2s;
+            margin-left: 8px;
+        }
+        
+        .yt-login-button {
+            background: none;
+            border: 1px solid var(--yt-border);
+            color: var(--yt-text);
+        }
+        
+        .yt-login-button:hover {
+            background-color: var(--yt-hover);
+            color: var(--yt-text);
+        }
+        
+        .yt-signup-button {
+            background-color: var(--yt-red);
+            color: white;
+        }
+        
+        .yt-signup-button:hover {
+            background-color: var(--yt-dark-red);
+            color: white;
+        }
+        
+        /* Notification Menu */
+        .yt-notification-menu {
+            position: relative;
+        }
+        
+        .yt-notification-button {
+            position: relative;
+        }
+        
+        .yt-notification-count {
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            background: var(--yt-red);
+            color: white;
+            border-radius: 50%;
+            font-size: 10px;
+            font-weight: 600;
+            min-width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2px;
+        }
+        
+        .yt-notification-dropdown {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            background-color: var(--yt-card-bg);
+            border: 1px solid var(--yt-border);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            width: 400px;
+            max-height: 500px;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.2s ease;
+            overflow: hidden;
+        }
+        
+        .yt-notification-dropdown.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        
+        .yt-notification-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--yt-border);
+        }
+        
+        .yt-notification-header h3 {
+            color: var(--yt-text);
+            font-size: 18px;
+            font-weight: 500;
+            margin: 0;
+        }
+        
+        .yt-notification-clear {
+            background: none;
+            border: none;
+            color: var(--yt-text-secondary);
+            padding: 8px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .yt-notification-clear:hover {
+            background: var(--yt-hover);
+            color: var(--yt-text);
+        }
+        
+        .yt-notification-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .yt-notification-empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--yt-text-secondary);
+        }
+        
+        .yt-notification-empty i {
+            font-size: 32px;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+        
+        .yt-notification-empty p {
+            margin: 0;
+            font-size: 14px;
+        }
+        
+        .yt-notification-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--yt-border);
+            cursor: pointer;
+            transition: background-color 0.2s;
+            position: relative;
+        }
+        
+        .yt-notification-item:hover {
+            background: var(--yt-hover);
+        }
+        
+        .yt-notification-item.unread {
+            background: rgba(255, 0, 0, 0.05);
+        }
+        
+        .yt-notification-item.unread::before {
+            content: '';
+            position: absolute;
+            left: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 4px;
+            height: 4px;
+            background: var(--yt-red);
+            border-radius: 50%;
+        }
+        
+        .yt-notification-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--yt-red);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 500;
+            flex-shrink: 0;
+        }
+        
+        .yt-notification-content {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .yt-notification-text {
+            color: var(--yt-text);
+            font-size: 14px;
+            line-height: 1.4;
+            margin-bottom: 4px;
+        }
+        
+        .yt-notification-time {
+            color: var(--yt-text-secondary);
+            font-size: 12px;
+        }
+        
+        .yt-notification-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        
+        .yt-notification-action {
+            background: var(--yt-border);
+            color: var(--yt-text);
+            border: none;
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .yt-notification-action:hover {
+            background: var(--yt-hover);
+        }
+        
+        .yt-notification-action.primary {
+            background: var(--yt-red);
+            color: white;
+        }
+        
+        .yt-notification-action.primary:hover {
+            background: var(--yt-dark-red);
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="yt-header">
+        <div class="yt-header-left">
+            <button class="yt-menu-button" onclick="toggleSidebar()">
+                <i class="fas fa-bars"></i>
+            </button>
+            <a href="{% url 'video_list' %}" class="yt-logo">
+                <i class="fab fa-youtube"></i>
+                <span class="yt-logo-text">YouTube Clone</span>
+            </a>
+        </div>
+        <div class="yt-header-center">
+            <form method="GET" action="{% url 'search_videos' %}" class="yt-search-container">
+                <input type="text" name="q" class="yt-search-input" placeholder="検索" value="{{ search_query|default:'' }}">
+                <button type="submit" class="yt-search-button">
+                    <i class="fas fa-search"></i>
+                </button>
+            </form>
+        </div>
+        <div class="yt-header-right">
+            {% if user.is_authenticated %}
+                <a href="{% url 'upload_video' %}" class="yt-upload-button">
+                    <i class="fas fa-video-plus"></i>
+                    <span>作成</span>
+                </a>
+                <div class="yt-notification-menu">
+                    <button class="yt-header-button yt-notification-button" onclick="toggleNotificationMenu()">
+                        <i class="fas fa-bell"></i>
+                        <span class="yt-notification-count" id="notificationCount" style="display: none;">0</span>
+                    </button>
+                    <div class="yt-notification-dropdown" id="notificationDropdown">
+                        <div class="yt-notification-header">
+                            <h3>通知</h3>
+                            <button class="yt-notification-clear" onclick="clearAllNotifications()">
+                                <i class="fas fa-check-double"></i>
+                            </button>
+                        </div>
+                        <div class="yt-notification-list" id="notificationList">
+                            <div class="yt-notification-empty">
+                                <i class="fas fa-bell-slash"></i>
+                                <p>新しい通知はありません</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="yt-user-menu">
+                    <div class="yt-user-avatar" onclick="toggleUserMenu()" style="cursor: pointer;">
+                        {{ user.username|first|upper }}
+                    </div>
+                    <div class="yt-user-dropdown" id="userDropdown">
+                        <div class="yt-user-info">
+                            <div class="yt-user-avatar">
+                                {{ user.username|first|upper }}
+                            </div>
+                            <div class="yt-user-details">
+                                <div class="yt-user-name">{{ user.username }}</div>
+                                <div class="yt-user-email">{{ user.email|default:"" }}</div>
+                            </div>
+                        </div>
+                        <hr class="yt-dropdown-divider">
+                        <a href="{% url 'channel_detail' user.username %}" class="yt-dropdown-item">
+                            <i class="fas fa-user"></i>
+                            <span>チャンネル</span>
+                        </a>
+                        <a href="{% url 'account_settings' %}" class="yt-dropdown-item">
+                            <i class="fas fa-cog"></i>
+                            <span>設定</span>
+                        </a>
+                        <hr class="yt-dropdown-divider">
+                        <a href="{% url 'logout' %}" class="yt-dropdown-item">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>ログアウト</span>
+                        </a>
+                    </div>
+                </div>
+            {% else %}
+                <a href="{% url 'login' %}" class="yt-auth-button yt-login-button">
+                    <i class="fas fa-sign-in-alt"></i>
+                    <span>ログイン</span>
+                </a>
+                <a href="{% url 'signup' %}" class="yt-auth-button yt-signup-button">
+                    <i class="fas fa-user-plus"></i>
+                    <span>新規登録</span>
+                </a>
+            {% endif %}
+        </div>
+    </header>
+
+    <!-- Sidebar -->
+    <nav class="yt-sidebar" id="sidebar">
+        <div class="yt-sidebar-section">
+            <a href="{% url 'video_list' %}" class="yt-sidebar-item {% if request.resolver_match.url_name == 'video_list' %}active{% endif %}">
+                <i class="fas fa-home"></i>
+                <span>ホーム</span>
+            </a>
+            <a href="{% url 'explore' %}" class="yt-sidebar-item {% if request.resolver_match.url_name == 'explore' %}active{% endif %}">
+                <i class="fas fa-compass"></i>
+                <span>探索</span>
+            </a>
+            <a href="{% url 'shorts' %}" class="yt-sidebar-item {% if request.resolver_match.url_name == 'shorts' %}active{% endif %}">
+                <i class="fas fa-play-circle"></i>
+                <span>ショート</span>
+            </a>
+            <a href="{% url 'subscriptions' %}" class="yt-sidebar-item {% if request.resolver_match.url_name == 'subscriptions' %}active{% endif %}">
+                <i class="fas fa-list"></i>
+                <span>登録チャンネル</span>
+            </a>
+        </div>
+        {% if user.is_authenticated %}
+        <div class="yt-sidebar-section">
+            <a href="{% url 'your_videos' %}" class="yt-sidebar-item {% if request.resolver_match.url_name == 'your_videos' %}active{% endif %}">
+                <i class="fas fa-video"></i>
+                <span>あなたの動画</span>
+            </a>
+            <a href="{% url 'history' %}" class="yt-sidebar-item {% if request.resolver_match.url_name == 'history' %}active{% endif %}">
+                <i class="fas fa-history"></i>
+                <span>履歴</span>
+            </a>
+            <a href="{% url 'watch_later' %}" class="yt-sidebar-item {% if request.resolver_match.url_name == 'watch_later' %}active{% endif %}">
+                <i class="fas fa-clock"></i>
+                <span>後で見る</span>
+            </a>
+            <a href="{% url 'liked_videos' %}" class="yt-sidebar-item {% if request.resolver_match.url_name == 'liked_videos' %}active{% endif %}">
+                <i class="fas fa-thumbs-up"></i>
+                <span>高評価した動画</span>
+            </a>
+        </div>
+        {% endif %}
+        
+        {% if user.is_authenticated and user_subscriptions_without_folder or user_subscriptions_by_folder %}
+        <div class="yt-sidebar-section">
+            <div class="yt-sidebar-section-header">
+                <span>登録チャンネル</span>
+                <a href="{% url 'subscriptions_manage' %}" class="yt-sidebar-manage">
+                    <i class="fas fa-cog"></i>
+                </a>
+            </div>
+            
+            <!-- Subscriptions without folder -->
+            {% for subscription in user_subscriptions_without_folder %}
+                <a href="{% url 'channel_detail' subscription.channel.user.username %}" class="yt-sidebar-item yt-sidebar-channel">
+                    <div class="yt-sidebar-avatar">
+                        {% if subscription.channel.avatar %}
+                            <img src="{{ subscription.channel.avatar.url }}" alt="{{ subscription.channel.name }}">
+                        {% else %}
+                            {{ subscription.channel.name|first|upper }}
+                        {% endif %}
+                    </div>
+                    <span>{{ subscription.channel.name }}</span>
+                </a>
+            {% endfor %}
+            
+            <!-- Subscriptions by folder (collapsed) -->
+            {% for folder, folder_subscriptions in user_subscriptions_by_folder.items %}
+                <div class="yt-sidebar-folder">
+                    <button class="yt-sidebar-item yt-sidebar-folder-toggle" onclick="toggleSidebarFolder({{ folder.id }})">
+                        <i class="fas fa-chevron-right" id="folder-icon-{{ folder.id }}"></i>
+                        <i class="fas fa-folder" style="color: {{ folder.color }}"></i>
+                        <span>{{ folder.name }}</span>
+                    </button>
+                    <div class="yt-sidebar-folder-content" id="folder-content-{{ folder.id }}" style="display: none;">
+                        {% for subscription in folder_subscriptions %}
+                            <a href="{% url 'channel_detail' subscription.channel.user.username %}" class="yt-sidebar-item yt-sidebar-channel yt-sidebar-nested">
+                                <div class="yt-sidebar-avatar">
+                                    {% if subscription.channel.avatar %}
+                                        <img src="{{ subscription.channel.avatar.url }}" alt="{{ subscription.channel.name }}">
+                                    {% else %}
+                                        {{ subscription.channel.name|first|upper }}
+                                    {% endif %}
+                                </div>
+                                <span>{{ subscription.channel.name }}</span>
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endfor %}
+            
+            {% if user_subscriptions_without_folder|length > 5 or user_subscriptions_by_folder %}
+                <a href="{% url 'subscriptions_manage' %}" class="yt-sidebar-item yt-sidebar-show-more">
+                    <i class="fas fa-chevron-down"></i>
+                    <span>さらに表示</span>
+                </a>
+            {% endif %}
+        </div>
+        {% endif %}
+        
+        <div class="yt-sidebar-section">
+            <a href="{% url 'trending' %}" class="yt-sidebar-item {% if request.resolver_match.url_name == 'trending' %}active{% endif %}">
+                <i class="fas fa-fire"></i>
+                <span>急上昇</span>
+            </a>
+            <a href="{% url 'video_list_by_genre' 'music' %}" class="yt-sidebar-item {% if request.resolver_match.url_name == 'video_list_by_genre' and request.resolver_match.kwargs.genre == 'music' %}active{% endif %}">
+                <i class="fas fa-music"></i>
+                <span>音楽</span>
+            </a>
+            <a href="{% url 'video_list_by_genre' 'gaming' %}" class="yt-sidebar-item {% if request.resolver_match.url_name == 'video_list_by_genre' and request.resolver_match.kwargs.genre == 'gaming' %}active{% endif %}">
+                <i class="fas fa-gamepad"></i>
+                <span>ゲーム</span>
+            </a>
+            <a href="{% url 'video_list_by_genre' 'news' %}" class="yt-sidebar-item {% if request.resolver_match.url_name == 'video_list_by_genre' and request.resolver_match.kwargs.genre == 'news' %}active{% endif %}">
+                <i class="fas fa-newspaper"></i>
+                <span>ニュース</span>
+            </a>
+            <a href="{% url 'video_list_by_genre' 'education' %}" class="yt-sidebar-item {% if request.resolver_match.url_name == 'video_list_by_genre' and request.resolver_match.kwargs.genre == 'education' %}active{% endif %}">
+                <i class="fas fa-graduation-cap"></i>
+                <span>教育</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="yt-main" id="main">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Lazy Loading Script -->
+    {% load static %}
+    <script src="{% static 'js/lazy-loading.js' %}"></script>
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const main = document.getElementById('main');
+            
+            sidebar.classList.toggle('collapsed');
+            main.classList.toggle('expanded');
+        }
+
+        // Auto-hide sidebar on mobile
+        function handleResize() {
+            const sidebar = document.getElementById('sidebar');
+            const main = document.getElementById('main');
+            
+            if (window.innerWidth <= 768) {
+                sidebar.classList.add('collapsed');
+                main.classList.add('expanded');
+            } else {
+                sidebar.classList.remove('collapsed');
+                main.classList.remove('expanded');
+            }
+        }
+
+        window.addEventListener('resize', handleResize);
+        handleResize(); // Initial check
+        
+        // Sidebar folder toggle functionality
+        function toggleSidebarFolder(folderId) {
+            const folder = document.querySelector(`.yt-sidebar-folder:has(#folder-icon-${folderId})`);
+            const content = document.getElementById(`folder-content-${folderId}`);
+            const icon = document.getElementById(`folder-icon-${folderId}`);
+            
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                folder.classList.add('expanded');
+                icon.style.transform = 'rotate(90deg)';
+            } else {
+                content.style.display = 'none';
+                folder.classList.remove('expanded');
+                icon.style.transform = 'rotate(0deg)';
+            }
+        }
+        
+        // Make toggleSidebarFolder globally accessible
+        window.toggleSidebarFolder = toggleSidebarFolder;
+        
+        // User menu toggle
+        function toggleUserMenu() {
+            const dropdown = document.getElementById('userDropdown');
+            dropdown.classList.toggle('show');
+        }
+        
+        // Close user menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const userMenu = document.querySelector('.yt-user-menu');
+            const dropdown = document.getElementById('userDropdown');
+            
+            if (userMenu && dropdown && !userMenu.contains(event.target)) {
+                dropdown.classList.remove('show');
+            }
+        });
+        
+        // Make toggleUserMenu globally accessible
+        window.toggleUserMenu = toggleUserMenu;
+        
+        // Notification system
+        let notifications = [];
+        let unreadCount = 0;
+        
+        // Toggle notification menu
+        function toggleNotificationMenu() {
+            const dropdown = document.getElementById('notificationDropdown');
+            const isOpen = dropdown.classList.contains('show');
+            
+            // Close user menu if open
+            document.getElementById('userDropdown').classList.remove('show');
+            
+            dropdown.classList.toggle('show');
+            
+            if (!isOpen) {
+                loadNotifications();
+            }
+        }
+        
+        // Load notifications
+        async function loadNotifications() {
+            try {
+                const response = await fetch('{% url "get_notifications" %}', {
+                    method: 'GET',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken')
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const formattedNotifications = data.notifications.map(n => ({
+                        id: n.id,
+                        type: n.type,
+                        user: n.title || 'システム',
+                        text: n.message,
+                        time: formatNotificationTime(n.created_at),
+                        unread: n.unread,
+                        actions: n.action_url ? [
+                            { text: '詳細を見る', primary: true, url: n.action_url }
+                        ] : null
+                    }));
+                    
+                    displayNotifications(formattedNotifications);
+                } else {
+                    console.error('Failed to load notifications');
+                    // Fallback to sample notifications
+                    displaySampleNotifications();
+                }
+            } catch (error) {
+                console.error('Error loading notifications:', error);
+                // Fallback to sample notifications
+                displaySampleNotifications();
+            }
+        }
+        
+        // Fallback sample notifications
+        function displaySampleNotifications() {
+            const sampleNotifications = [
+                {
+                    id: 'sample_1',
+                    type: 'subscription',
+                    user: 'テストユーザー',
+                    text: 'テストユーザーが新しい動画をアップロードしました',
+                    time: '2時間前',
+                    unread: true,
+                    actions: [
+                        { text: '動画を見る', primary: true },
+                        { text: '後で見る', primary: false }
+                    ]
+                },
+                {
+                    id: 'sample_2',
+                    type: 'like',
+                    user: 'ユーザー2',
+                    text: 'ユーザー2があなたの動画に高評価しました',
+                    time: '1日前',
+                    unread: false
+                }
+            ];
+            
+            displayNotifications(sampleNotifications);
+        }
+        
+        // Format notification time
+        function formatNotificationTime(isoString) {
+            const date = new Date(isoString);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMins / 60);
+            const diffDays = Math.floor(diffHours / 24);
+            
+            if (diffMins < 1) return 'たった今';
+            if (diffMins < 60) return `${diffMins}分前`;
+            if (diffHours < 24) return `${diffHours}時間前`;
+            if (diffDays < 7) return `${diffDays}日前`;
+            
+            return date.toLocaleDateString('ja-JP');
+        }
+        
+        // Display notifications
+        function displayNotifications(notificationList) {
+            const listElement = document.getElementById('notificationList');
+            const countElement = document.getElementById('notificationCount');
+            
+            if (notificationList.length === 0) {
+                listElement.innerHTML = `
+                    <div class="yt-notification-empty">
+                        <i class="fas fa-bell-slash"></i>
+                        <p>新しい通知はありません</p>
+                    </div>
+                `;
+                countElement.style.display = 'none';
+                return;
+            }
+            
+            let unreadCount = notificationList.filter(n => n.unread).length;
+            
+            listElement.innerHTML = notificationList.map(notification => `
+                <div class="yt-notification-item ${notification.unread ? 'unread' : ''}" 
+                     onclick="markAsRead(${notification.id})">
+                    <div class="yt-notification-avatar">
+                        ${notification.user.charAt(0).toUpperCase()}
+                    </div>
+                    <div class="yt-notification-content">
+                        <div class="yt-notification-text">${notification.text}</div>
+                        <div class="yt-notification-time">${notification.time}</div>
+                        ${notification.actions ? `
+                            <div class="yt-notification-actions">
+                                ${notification.actions.map(action => `
+                                    <button class="yt-notification-action ${action.primary ? 'primary' : ''}" 
+                                            onclick="event.stopPropagation();">
+                                        ${action.text}
+                                    </button>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+            
+            if (unreadCount > 0) {
+                countElement.textContent = unreadCount;
+                countElement.style.display = 'flex';
+            } else {
+                countElement.style.display = 'none';
+            }
+            
+            notifications = notificationList;
+        }
+        
+        // Mark notification as read
+        async function markAsRead(notificationId) {
+            const notification = notifications.find(n => n.id === notificationId);
+            if (notification && notification.unread) {
+                try {
+                    const response = await fetch('{% url "mark_notification_read" %}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCookie('csrftoken')
+                        },
+                        body: JSON.stringify({
+                            notification_id: notificationId
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        notification.unread = false;
+                        displayNotifications(notifications);
+                    }
+                } catch (error) {
+                    console.error('Error marking notification as read:', error);
+                }
+            }
+        }
+        
+        // Clear all notifications
+        async function clearAllNotifications() {
+            try {
+                const response = await fetch('{% url "mark_all_notifications_read" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    }
+                });
+                
+                if (response.ok) {
+                    notifications = notifications.map(n => ({ ...n, unread: false }));
+                    displayNotifications(notifications);
+                }
+            } catch (error) {
+                console.error('Error clearing notifications:', error);
+            }
+        }
+        
+        // Add new notification (for demo purposes)
+        function addNotification(type, user, text, actions = null) {
+            const newNotification = {
+                id: Date.now(),
+                type: type,
+                user: user,
+                text: text,
+                time: 'たった今',
+                unread: true,
+                actions: actions
+            };
+            
+            notifications.unshift(newNotification);
+            displayNotifications(notifications);
+            
+            // Show desktop notification if permission granted
+            if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification('YouTube Clone', {
+                    body: text,
+                    icon: '/static/images/logo.png'
+                });
+            }
+        }
+        
+        // Request notification permission
+        function requestNotificationPermission() {
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission();
+            }
+        }
+        
+        // Close notification menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const notificationMenu = document.querySelector('.yt-notification-menu');
+            const userMenu = document.querySelector('.yt-user-menu');
+            const notificationDropdown = document.getElementById('notificationDropdown');
+            const userDropdown = document.getElementById('userDropdown');
+            
+            if (notificationMenu && notificationDropdown && !notificationMenu.contains(event.target)) {
+                notificationDropdown.classList.remove('show');
+            }
+            
+            if (userMenu && userDropdown && !userMenu.contains(event.target)) {
+                userDropdown.classList.remove('show');
+            }
+        });
+        
+        // Initialize notification system
+        document.addEventListener('DOMContentLoaded', function() {
+            requestNotificationPermission();
+            
+            // Simulate receiving notifications (for demo)
+            setTimeout(() => {
+                if ({{ user.is_authenticated|yesno:"true,false" }}) {
+                    // Simulate notifications every 30 seconds
+                    setInterval(() => {
+                        const sampleTexts = [
+                            'テストユーザーが新しい動画をアップロードしました',
+                            'あなたの動画に新しいコメントがあります',
+                            'ライブ配信が開始されました',
+                            'チャンネル登録者が1000人に達しました！'
+                        ];
+                        const randomText = sampleTexts[Math.floor(Math.random() * sampleTexts.length)];
+                        addNotification('info', 'システム', randomText);
+                    }, 30000);
+                }
+            }, 5000);
+        });
+        
+        // Cookie helper function
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        
+        // Make functions globally accessible
+        window.toggleNotificationMenu = toggleNotificationMenu;
+        window.clearAllNotifications = clearAllNotifications;
+        window.markAsRead = markAsRead;
+        window.addNotification = addNotification;
+        window.getCookie = getCookie;
+    </script>
+    {% block scripts %}
+    {% endblock %}
+</body>
+</html>

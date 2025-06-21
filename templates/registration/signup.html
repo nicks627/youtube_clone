@@ -1,0 +1,226 @@
+{% extends 'videos/base.html' %}
+
+{% block title %}新規登録 - YouTube Clone{% endblock %}
+
+{% block content %}
+<div class="yt-auth-container">
+    <div class="yt-auth-card">
+        <div class="yt-auth-header">
+            <div class="yt-auth-logo">
+                <i class="fab fa-youtube"></i>
+                <span>YouTube Clone</span>
+            </div>
+            <h1>新規登録</h1>
+            <p>アカウントを作成して動画をアップロードしましょう</p>
+        </div>
+        
+        <form method="post" class="yt-auth-form">
+            {% csrf_token %}
+            
+            {% if form.errors %}
+                <div class="yt-auth-error">
+                    {% for field, errors in form.errors.items %}
+                        {% for error in errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    {% endfor %}
+                </div>
+            {% endif %}
+            
+            <div class="yt-form-group">
+                <label for="{{ form.username.id_for_label }}" class="yt-form-label">
+                    ユーザー名
+                </label>
+                {{ form.username }}
+                {% if form.username.help_text %}
+                    <div class="yt-form-help">{{ form.username.help_text }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="yt-form-group">
+                <label for="{{ form.password1.id_for_label }}" class="yt-form-label">
+                    パスワード
+                </label>
+                {{ form.password1 }}
+                {% if form.password1.help_text %}
+                    <div class="yt-form-help">{{ form.password1.help_text }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="yt-form-group">
+                <label for="{{ form.password2.id_for_label }}" class="yt-form-label">
+                    パスワード（確認）
+                </label>
+                {{ form.password2 }}
+                {% if form.password2.help_text %}
+                    <div class="yt-form-help">{{ form.password2.help_text }}</div>
+                {% endif %}
+            </div>
+            
+            <button type="submit" class="yt-auth-submit">
+                アカウント作成
+            </button>
+        </form>
+        
+        <div class="yt-auth-footer">
+            <p>既にアカウントをお持ちの場合は、<a href="{% url 'login' %}">ログイン</a>してください</p>
+        </div>
+    </div>
+</div>
+
+<style>
+.yt-auth-container {
+    min-height: calc(100vh - 56px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+}
+
+.yt-auth-card {
+    background-color: var(--yt-card-bg);
+    border: 1px solid var(--yt-border);
+    border-radius: 12px;
+    padding: 40px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.yt-auth-header {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.yt-auth-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 24px;
+    font-weight: 500;
+    color: var(--yt-text);
+    margin-bottom: 24px;
+}
+
+.yt-auth-logo i {
+    color: var(--yt-red);
+    font-size: 32px;
+}
+
+.yt-auth-header h1 {
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--yt-text);
+    margin: 0 0 8px 0;
+}
+
+.yt-auth-header p {
+    color: var(--yt-text-secondary);
+    margin: 0;
+    font-size: 16px;
+}
+
+.yt-auth-form {
+    margin-bottom: 24px;
+}
+
+.yt-form-group {
+    margin-bottom: 24px;
+}
+
+.yt-form-label {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--yt-text);
+    margin-bottom: 8px;
+}
+
+.yt-auth-form input[type="text"],
+.yt-auth-form input[type="password"] {
+    width: 100%;
+    background-color: var(--yt-bg);
+    border: 1px solid var(--yt-border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    color: var(--yt-text);
+    font-size: 16px;
+    transition: border-color 0.2s;
+}
+
+.yt-auth-form input[type="text"]:focus,
+.yt-auth-form input[type="password"]:focus {
+    outline: none;
+    border-color: var(--yt-red);
+    box-shadow: 0 0 0 2px rgba(255, 0, 0, 0.1);
+}
+
+.yt-form-help {
+    font-size: 12px;
+    color: var(--yt-text-secondary);
+    margin-top: 4px;
+    line-height: 1.4;
+}
+
+.yt-auth-submit {
+    width: 100%;
+    background-color: var(--yt-red);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.yt-auth-submit:hover {
+    background-color: var(--yt-dark-red);
+}
+
+.yt-auth-error {
+    background-color: rgba(255, 68, 68, 0.1);
+    border: 1px solid #ff4444;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 24px;
+}
+
+.yt-auth-error p {
+    color: #ff4444;
+    margin: 0;
+    font-size: 14px;
+}
+
+.yt-auth-footer {
+    text-align: center;
+    padding-top: 24px;
+    border-top: 1px solid var(--yt-border);
+}
+
+.yt-auth-footer p {
+    color: var(--yt-text-secondary);
+    margin: 0;
+    font-size: 14px;
+}
+
+.yt-auth-footer a {
+    color: var(--yt-red);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.yt-auth-footer a:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 480px) {
+    .yt-auth-card {
+        padding: 24px;
+        margin: 16px;
+    }
+}
+</style>
+{% endblock %}

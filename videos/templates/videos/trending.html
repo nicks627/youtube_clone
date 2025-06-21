@@ -1,0 +1,505 @@
+{% extends 'videos/base.html' %}
+
+{% block title %}急上昇 - YouTube Clone{% endblock %}
+
+{% block content %}
+<div class="yt-trending-container">
+    <div class="yt-trending-header">
+        <h1 class="yt-trending-title">
+            <i class="fas fa-fire"></i>
+            急上昇
+        </h1>
+        <p class="yt-trending-subtitle">人気の動画をチェック</p>
+    </div>
+
+    {% if trending_videos %}
+    <div class="yt-trending-content">
+        <div class="yt-trending-info">
+            <p>過去30日間で最も視聴された動画を表示しています</p>
+        </div>
+        
+        <div class="yt-trending-list">
+            {% for video in trending_videos %}
+                <div class="yt-trending-item" onclick="location.href='{% url 'video_detail' video.pk %}'">
+                    <div class="yt-trending-rank">
+                        {{ forloop.counter }}
+                    </div>
+                    
+                    <div class="yt-trending-thumbnail">
+                        {% if video.thumbnail %}
+                            <img src="{{ video.thumbnail.url }}" alt="{{ video.title }}">
+                        {% else %}
+                            <div class="yt-trending-placeholder">
+                                <i class="fas fa-play"></i>
+                            </div>
+                        {% endif %}
+                        <div class="yt-video-duration">8:42</div>
+                    </div>
+                    
+                    <div class="yt-trending-info-section">
+                        <h3 class="yt-trending-video-title">{{ video.title }}</h3>
+                        <div class="yt-trending-meta">
+                            <div class="yt-trending-channel">{{ video.uploaded_by.username }}</div>
+                            <div class="yt-trending-stats">
+                                <span class="yt-trending-views">{{ video.views|floatformat:0 }} 回視聴</span>
+                                <span>•</span>
+                                <span>{{ video.uploaded_at|timesince }}前</span>
+                            </div>
+                            {% if video.description %}
+                            <div class="yt-trending-description">
+                                {{ video.description|truncatechars:200 }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="yt-trending-actions">
+                        <button class="yt-trending-action-btn" onclick="event.stopPropagation(); addToWatchLater({{ video.id }})">
+                            <i class="fas fa-clock"></i>
+                            <span>後で見る</span>
+                        </button>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% else %}
+    <div class="yt-empty-state">
+        <div class="yt-empty-icon">
+            <i class="fas fa-fire"></i>
+        </div>
+        <h3>急上昇動画がありません</h3>
+        <p>まだ十分なデータがありません。しばらく経ってから再度確認してください。</p>
+        <a href="{% url 'video_list' %}" class="yt-btn yt-btn-primary">
+            <i class="fas fa-home"></i>
+            ホームに戻る
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.yt-trending-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px;
+}
+
+.yt-trending-header {
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--yt-border);
+}
+
+.yt-trending-title {
+    font-size: 32px;
+    font-weight: 600;
+    color: var(--yt-text);
+    margin: 0 0 8px 0;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.yt-trending-title i {
+    color: #ff6b35;
+}
+
+.yt-trending-subtitle {
+    font-size: 16px;
+    color: var(--yt-text-secondary);
+    margin: 0;
+}
+
+.yt-trending-info {
+    margin-bottom: 24px;
+    padding: 16px;
+    background: var(--yt-card-bg);
+    border: 1px solid var(--yt-border);
+    border-radius: 8px;
+}
+
+.yt-trending-info p {
+    font-size: 14px;
+    color: var(--yt-text-secondary);
+    margin: 0;
+}
+
+.yt-trending-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.yt-trending-item {
+    display: flex;
+    gap: 16px;
+    padding: 16px;
+    background: var(--yt-card-bg);
+    border: 1px solid var(--yt-border);
+    border-radius: 12px;
+    transition: all 0.2s;
+    cursor: pointer;
+    align-items: flex-start;
+}
+
+.yt-trending-item:hover {
+    background: var(--yt-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.yt-trending-rank {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--yt-text-secondary);
+    width: 40px;
+    text-align: center;
+    flex-shrink: 0;
+    margin-top: 8px;
+}
+
+.yt-trending-thumbnail {
+    position: relative;
+    width: 246px;
+    height: 138px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--yt-card-bg);
+    flex-shrink: 0;
+}
+
+.yt-trending-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.yt-trending-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 24px;
+}
+
+.yt-video-duration {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 2px 4px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.yt-trending-info-section {
+    flex: 1;
+    min-width: 0;
+}
+
+.yt-trending-video-title {
+    font-size: 18px;
+    font-weight: 500;
+    line-height: 1.4;
+    margin: 0 0 8px 0;
+    color: var(--yt-text);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.yt-trending-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.yt-trending-channel {
+    font-size: 14px;
+    color: var(--yt-text-secondary);
+    font-weight: 500;
+}
+
+.yt-trending-stats {
+    font-size: 14px;
+    color: var(--yt-text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.yt-trending-views {
+    font-weight: 500;
+    color: #ff6b35;
+}
+
+.yt-trending-description {
+    font-size: 14px;
+    color: var(--yt-text-secondary);
+    line-height: 1.4;
+    margin-top: 8px;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.yt-trending-actions {
+    display: flex;
+    align-items: flex-start;
+    flex-shrink: 0;
+}
+
+.yt-trending-action-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: none;
+    color: var(--yt-text-secondary);
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 12px;
+    min-width: 60px;
+}
+
+.yt-trending-action-btn:hover {
+    background: var(--yt-hover);
+    color: var(--yt-text);
+}
+
+.yt-trending-action-btn i {
+    font-size: 16px;
+}
+
+.yt-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+}
+
+.yt-btn-primary {
+    background: var(--yt-red);
+    color: white;
+}
+
+.yt-btn-primary:hover {
+    background: var(--yt-dark-red);
+    color: white;
+}
+
+.yt-empty-state {
+    text-align: center;
+    padding: 80px 20px;
+}
+
+.yt-empty-icon {
+    font-size: 64px;
+    color: #ff6b35;
+    margin-bottom: 24px;
+}
+
+.yt-empty-state h3 {
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--yt-text);
+    margin: 0 0 12px 0;
+}
+
+.yt-empty-state p {
+    font-size: 16px;
+    color: var(--yt-text-secondary);
+    margin: 0 0 24px 0;
+}
+
+@media (max-width: 768px) {
+    .yt-trending-container {
+        padding: 0 16px;
+    }
+    
+    .yt-trending-title {
+        font-size: 24px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    
+    .yt-trending-item {
+        flex-direction: column;
+        gap: 12px;
+        align-items: stretch;
+    }
+    
+    .yt-trending-rank {
+        font-size: 20px;
+        text-align: left;
+        margin-top: 0;
+    }
+    
+    .yt-trending-thumbnail {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 16/9;
+    }
+    
+    .yt-trending-actions {
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .yt-trending-title {
+        font-size: 20px;
+    }
+    
+    .yt-trending-item {
+        padding: 12px;
+    }
+    
+    .yt-trending-rank {
+        font-size: 18px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function addToWatchLater(videoId) {
+    if (!{{ user.is_authenticated|yesno:"true,false" }}) {
+        alert('ログインが必要です');
+        return;
+    }
+    
+    try {
+        const response = await fetch('{% url "toggle_watch_later" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                video_id: videoId
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            // Show notification
+            showNotification(data.message, 'success');
+        } else {
+            alert(data.error || 'エラーが発生しました');
+        }
+    } catch (error) {
+        console.error('Error adding to watch later:', error);
+        alert('エラーが発生しました');
+    }
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function showNotification(message, type = 'info') {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `yt-notification yt-notification-${type}`;
+    notification.innerHTML = `
+        <div class="yt-notification-content">
+            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    
+    // Add styles if not already present
+    if (!document.querySelector('#notification-styles')) {
+        const style = document.createElement('style');
+        style.id = 'notification-styles';
+        style.textContent = `
+            .yt-notification {
+                position: fixed;
+                top: 80px;
+                right: 20px;
+                z-index: 10000;
+                background: var(--yt-card-bg);
+                border: 1px solid var(--yt-border);
+                border-radius: 8px;
+                padding: 12px 16px;
+                min-width: 300px;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+                transform: translateX(100%);
+                transition: transform 0.3s ease;
+            }
+            
+            .yt-notification.show {
+                transform: translateX(0);
+            }
+            
+            .yt-notification-success {
+                border-left: 4px solid #00d563;
+            }
+            
+            .yt-notification-content {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                color: var(--yt-text);
+            }
+            
+            .yt-notification-success i {
+                color: #00d563;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    // Add to page
+    document.body.appendChild(notification);
+    
+    // Trigger animation
+    setTimeout(() => {
+        notification.classList.add('show');
+    }, 100);
+    
+    // Remove after delay
+    setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, 3000);
+}
+</script>
+{% endblock %}

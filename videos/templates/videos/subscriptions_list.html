@@ -1,0 +1,373 @@
+{% extends 'videos/base.html' %}
+
+{% block title %}登録チャンネル - YouTube Clone{% endblock %}
+
+{% block content %}
+<div class="yt-main-content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="yt-page-header">
+                    <h1 class="yt-page-title">
+                        <i class="fas fa-users"></i>
+                        登録チャンネル
+                    </h1>
+                </div>
+                
+                {% if not subscriptions %}
+                    <!-- No subscriptions - show recommendations -->
+                    <div class="yt-empty-state">
+                        <div class="yt-empty-content">
+                            <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                            <h3>まだチャンネルに登録していません</h3>
+                            <p class="text-muted">興味のあるチャンネルを見つけて登録してみましょう！</p>
+                        </div>
+                        
+                        {% if recommended_channels %}
+                        <div class="yt-recommendations mt-4">
+                            <h4>おすすめのチャンネル</h4>
+                            <div class="row">
+                                {% for channel in recommended_channels %}
+                                <div class="col-md-4 col-sm-6 mb-4">
+                                    <div class="yt-channel-card">
+                                        <div class="yt-channel-avatar">
+                                            {% if channel.avatar %}
+                                                <img src="{{ channel.avatar.url }}" alt="{{ channel.name }}">
+                                            {% else %}
+                                                <div class="yt-default-avatar">
+                                                    <i class="fas fa-user"></i>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="yt-channel-info">
+                                            <h5 class="yt-channel-name">{{ channel.name }}</h5>
+                                            <p class="yt-channel-description">{{ channel.description|truncatewords:10 }}</p>
+                                            <p class="yt-channel-stats">
+                                                <span class="yt-subscriber-count">
+                                                    {{ channel.get_subscriber_count_display }} 登録者
+                                                </span>
+                                            </p>
+                                            <button class="btn btn-primary yt-subscribe-btn" 
+                                                    onclick="toggleSubscription({{ channel.id }})">
+                                                <i class="fas fa-plus"></i> 登録
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <!-- Show subscriptions and recent videos -->
+                    <div class="yt-subscriptions-content">
+                        <!-- Subscribed Channels -->
+                        <div class="yt-subscribed-channels mb-4">
+                            <h4>登録チャンネル ({{ subscriptions.count }})</h4>
+                            <div class="yt-channels-grid">
+                                {% for subscription in subscriptions %}
+                                <div class="yt-subscription-item">
+                                    <div class="yt-channel-avatar">
+                                        {% if subscription.channel.avatar %}
+                                            <img src="{{ subscription.channel.avatar.url }}" alt="{{ subscription.channel.name }}">
+                                        {% else %}
+                                            <div class="yt-default-avatar">
+                                                <i class="fas fa-user"></i>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="yt-channel-info">
+                                        <h6 class="yt-channel-name">{{ subscription.channel.name }}</h6>
+                                        <p class="yt-channel-stats">
+                                            {{ subscription.channel.get_subscriber_count_display }} 登録者
+                                        </p>
+                                    </div>
+                                    <div class="yt-channel-actions">
+                                        <button class="btn btn-outline-secondary btn-sm" 
+                                                onclick="toggleSubscription({{ subscription.channel.id }})">
+                                            <i class="fas fa-check"></i> 登録済み
+                                        </button>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <!-- Recent Videos from Subscriptions -->
+                        {% if subscribed_videos %}
+                        <div class="yt-recent-videos">
+                            <h4>最新の動画</h4>
+                            <div class="row">
+                                {% for video in subscribed_videos %}
+                                <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                                    <div class="yt-video-card">
+                                        <a href="{% url 'video_detail' video.pk %}" class="yt-video-link">
+                                            <div class="yt-video-thumbnail">
+                                                {% if video.thumbnail %}
+                                                    <img src="{{ video.thumbnail.url }}" alt="{{ video.title }}">
+                                                {% else %}
+                                                    <div class="yt-default-thumbnail">
+                                                        <i class="fas fa-play"></i>
+                                                    </div>
+                                                {% endif %}
+                                                <div class="yt-video-duration">
+                                                    <!-- Duration placeholder -->
+                                                    <span>--:--</span>
+                                                </div>
+                                            </div>
+                                            <div class="yt-video-info">
+                                                <h6 class="yt-video-title">{{ video.title|truncatechars:60 }}</h6>
+                                                <p class="yt-video-channel">{{ video.uploaded_by.username }}</p>
+                                                <p class="yt-video-stats">
+                                                    {{ video.views|floatformat:0 }} 回視聴 • 
+                                                    {{ video.uploaded_at|timesince }}前
+                                                </p>
+                                            </div>
+                                        </a>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.yt-empty-state {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.yt-empty-content {
+    margin-bottom: 40px;
+}
+
+.yt-recommendations {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.yt-channel-card {
+    background: #1f1f1f;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    height: 100%;
+    border: 1px solid #333;
+    transition: all 0.3s ease;
+}
+
+.yt-channel-card:hover {
+    border-color: #666;
+    transform: translateY(-2px);
+}
+
+.yt-channel-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    margin: 0 auto 15px;
+    overflow: hidden;
+}
+
+.yt-channel-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.yt-default-avatar {
+    width: 100%;
+    height: 100%;
+    background: #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+    font-size: 24px;
+}
+
+.yt-channel-name {
+    color: #fff;
+    margin-bottom: 8px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.yt-channel-description {
+    color: #aaa;
+    font-size: 14px;
+    margin-bottom: 10px;
+}
+
+.yt-channel-stats {
+    color: #aaa;
+    font-size: 13px;
+    margin-bottom: 15px;
+}
+
+.yt-subscribed-channels {
+    background: #1f1f1f;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 30px;
+}
+
+.yt-channels-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.yt-subscription-item {
+    display: flex;
+    align-items: center;
+    background: #2a2a2a;
+    border-radius: 8px;
+    padding: 15px;
+    gap: 15px;
+}
+
+.yt-subscription-item .yt-channel-avatar {
+    width: 48px;
+    height: 48px;
+    margin: 0;
+}
+
+.yt-subscription-item .yt-channel-info {
+    flex: 1;
+}
+
+.yt-subscription-item .yt-channel-name {
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+
+.yt-subscription-item .yt-channel-stats {
+    font-size: 12px;
+    margin: 0;
+}
+
+.yt-recent-videos h4 {
+    color: #fff;
+    margin-bottom: 20px;
+    font-size: 20px;
+}
+
+/* Video cards styling */
+.yt-video-card {
+    background: #1f1f1f;
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    height: 100%;
+}
+
+.yt-video-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.yt-video-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    height: 100%;
+}
+
+.yt-video-thumbnail {
+    position: relative;
+    width: 100%;
+    height: 180px;
+    overflow: hidden;
+}
+
+.yt-video-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.yt-default-thumbnail {
+    width: 100%;
+    height: 100%;
+    background: #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+    font-size: 32px;
+}
+
+.yt-video-duration {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    background: rgba(0,0,0,0.8);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.yt-video-info {
+    padding: 12px;
+}
+
+.yt-video-title {
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    line-height: 1.3;
+}
+
+.yt-video-channel {
+    color: #aaa;
+    font-size: 13px;
+    margin-bottom: 4px;
+}
+
+.yt-video-stats {
+    color: #aaa;
+    font-size: 12px;
+    margin: 0;
+}
+</style>
+
+<script>
+function toggleSubscription(channelId) {
+    fetch('{% url "toggle_subscription" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({
+            channel_id: channelId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            alert(data.error);
+        } else {
+            alert(data.message);
+            location.reload();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('エラーが発生しました');
+    });
+}
+</script>
+{% endblock %}

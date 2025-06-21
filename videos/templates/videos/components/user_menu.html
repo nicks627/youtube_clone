@@ -1,0 +1,49 @@
+<!-- User Menu Component -->
+{% load static %}
+
+<div class="yt-user-menu">
+    <div class="yt-user-avatar">
+        {% if user.channel.avatar %}
+            <img src="{{ user.channel.avatar.url }}" alt="{{ user.username }}">
+        {% else %}
+            {{ user.username|first|upper }}
+        {% endif %}
+    </div>
+    
+    <div class="yt-user-dropdown" id="userDropdown">
+        <div class="yt-user-dropdown-header">
+            <div class="yt-user-dropdown-avatar">
+                {% if user.channel.avatar %}
+                    <img src="{{ user.channel.avatar.url }}" alt="{{ user.username }}">
+                {% else %}
+                    {{ user.username|first|upper }}
+                {% endif %}
+            </div>
+            <div class="yt-user-info">
+                <h3>{{ user.username }}</h3>
+                <p>{{ user.email|default:"" }}</p>
+            </div>
+        </div>
+        
+        <div class="yt-dropdown-divider"></div>
+        
+        <a href="{% url 'channel_detail' user.username %}" class="yt-dropdown-item">
+            <i class="fas fa-user"></i>
+            <span>チャンネル</span>
+        </a>
+        
+        <a href="{% url 'account_settings' %}" class="yt-dropdown-item">
+            <i class="fas fa-cog"></i>
+            <span>設定</span>
+        </a>
+        
+        <div class="yt-dropdown-divider"></div>
+        
+        <a href="{% url 'logout' %}" class="yt-dropdown-item">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>ログアウト</span>
+        </a>
+    </div>
+</div>
+
+<!-- User Menu Styles and JavaScript loaded in base.html -->

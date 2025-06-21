@@ -1,0 +1,788 @@
+{% extends 'videos/base.html' %}
+
+{% block title %}{{ channel.name }} - YouTube Clone{% endblock %}
+
+{% block content %}
+<div class="yt-channel-container">
+    <!-- Channel Header -->
+    <div class="yt-channel-header">
+        {% if channel.banner %}
+        <div class="yt-channel-banner">
+            <img src="{{ channel.banner.url }}" alt="{{ channel.name }} banner">
+        </div>
+        {% endif %}
+        
+        <div class="yt-channel-info-header">
+            <div class="yt-channel-avatar-large">
+                {% if channel.avatar %}
+                    <img src="{{ channel.avatar.url }}" alt="{{ channel.name }}">
+                {% else %}
+                    <div class="yt-default-avatar-large">
+                        {{ channel.name|first|upper }}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="yt-channel-meta">
+                <h1 class="yt-channel-title">{{ channel.name }}</h1>
+                <div class="yt-channel-stats">
+                    <span class="yt-stat">@{{ channel_user.username }}</span>
+                    <span class="yt-stat">{{ channel.get_subscriber_count_display }} 登録者</span>
+                    <span class="yt-stat">{{ total_videos }} 本の動画</span>
+                    <span class="yt-stat">合計 {{ total_views|floatformat:0 }} 回視聴</span>
+                </div>
+                
+                {% if channel.bio %}
+                <div class="yt-channel-bio">
+                    {{ channel.bio|linebreaks }}
+                </div>
+                {% endif %}
+                
+                {% if channel.website or channel.twitter_handle %}
+                <div class="yt-channel-links">
+                    {% if channel.website %}
+                    <a href="{{ channel.website }}" class="yt-channel-link" target="_blank" rel="noopener">
+                        <i class="fas fa-globe"></i>
+                        ウェブサイト
+                    </a>
+                    {% endif %}
+                    {% if channel.twitter_handle %}
+                    <a href="https://twitter.com/{{ channel.twitter_handle }}" class="yt-channel-link" target="_blank" rel="noopener">
+                        <i class="fab fa-twitter"></i>
+                        @{{ channel.twitter_handle }}
+                    </a>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="yt-channel-actions">
+                {% if user.is_authenticated %}
+                    {% if channel_user == user %}
+                        <a href="{% url 'edit_profile' %}" class="yt-btn yt-btn-secondary">
+                            <i class="fas fa-edit"></i>
+                            プロフィールを編集
+                        </a>
+                    {% else %}
+                        <button class="yt-btn {% if is_subscribed %}yt-btn-subscribed{% else %}yt-btn-subscribe{% endif %}" 
+                                onclick="toggleChannelSubscription({{ channel.id }})" id="subscribeBtn">
+                            <i class="fas fa-bell" id="subscribeIcon"></i>
+                            <span id="subscribeText">
+                                {% if is_subscribed %}登録済み{% else %}チャンネル登録{% endif %}
+                            </span>
+                        </button>
+                    {% endif %}
+                {% else %}
+                    <button class="yt-btn yt-btn-subscribe" onclick="alert('ログインが必要です')">
+                        <i class="fas fa-bell"></i>
+                        チャンネル登録
+                    </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Channel Content -->
+    <div class="yt-channel-content">
+        <div class="yt-channel-tabs">
+            <div class="yt-tab active" data-tab="videos">
+                <i class="fas fa-video"></i>
+                動画
+            </div>
+            <div class="yt-tab" data-tab="about">
+                <i class="fas fa-info-circle"></i>
+                概要
+            </div>
+        </div>
+        
+        <!-- Videos Tab -->
+        <div class="yt-tab-content active" id="videos-tab">
+            {% if videos %}
+                <div class="yt-videos-grid">
+                    {% for video in videos %}
+                    <div class="yt-video-card">
+                        <a href="{% url 'video_detail' video.pk %}" class="yt-video-link">
+                            <div class="yt-video-thumbnail">
+                                {% if video.thumbnail %}
+                                    <img src="{{ video.thumbnail.url }}" alt="{{ video.title }}">
+                                {% else %}
+                                    <div class="yt-default-thumbnail">
+                                        <i class="fas fa-play"></i>
+                                    </div>
+                                {% endif %}
+                                <div class="yt-video-duration">
+                                    <span>{{ video.get_duration_display }}</span>
+                                </div>
+                            </div>
+                        </a>
+                        <div class="yt-video-info">
+                            <h6 class="yt-video-title">
+                                <a href="{% url 'video_detail' video.pk %}">{{ video.title }}</a>
+                            </h6>
+                            <p class="yt-video-stats">
+                                <span class="yt-stat-item">
+                                    <i class="fas fa-eye"></i>
+                                    {{ video.views|floatformat:0 }} 回視聴
+                                </span>
+                                <span class="yt-stat-item">
+                                    <i class="fas fa-thumbs-up"></i>
+                                    {{ video.get_like_count }}
+                                </span>
+                            </p>
+                            <p class="yt-video-date">{{ video.uploaded_at|date:"Y年n月j日" }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Add pagination for videos -->
+                {% include 'videos/pagination.html' %}
+            {% else %}
+                <div class="yt-empty-state">
+                    <div class="yt-empty-content">
+                        <i class="fas fa-video fa-3x text-muted mb-3"></i>
+                        <h3>まだ動画がありません</h3>
+                        <p class="text-muted">
+                            {% if channel_user == user %}
+                                動画をアップロードして、コンテンツを共有しましょう！
+                            {% else %}
+                                このチャンネルはまだ動画をアップロードしていません。
+                            {% endif %}
+                        </p>
+                        {% if channel_user == user %}
+                        <a href="{% url 'upload_video' %}" class="yt-btn yt-btn-primary">
+                            <i class="fas fa-plus"></i>
+                            動画をアップロード
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+        
+        <!-- About Tab -->
+        <div class="yt-tab-content" id="about-tab">
+            <div class="yt-about-section">
+                <h3>チャンネルについて</h3>
+                
+                {% if channel.bio %}
+                <div class="yt-about-item">
+                    <h4>紹介</h4>
+                    <p>{{ channel.bio|linebreaks }}</p>
+                </div>
+                {% endif %}
+                
+                <div class="yt-about-item">
+                    <h4>詳細</h4>
+                    <div class="yt-about-details">
+                        <div class="yt-detail-row">
+                            <span class="yt-detail-label">チャンネル開設日:</span>
+                            <span class="yt-detail-value">{{ channel.created_at|date:"Y年n月j日" }}</span>
+                        </div>
+                        <div class="yt-detail-row">
+                            <span class="yt-detail-label">合計視聴回数:</span>
+                            <span class="yt-detail-value">{{ total_views|floatformat:0 }} 回</span>
+                        </div>
+                        <div class="yt-detail-row">
+                            <span class="yt-detail-label">動画数:</span>
+                            <span class="yt-detail-value">{{ total_videos }} 本</span>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if channel.website or channel.twitter_handle %}
+                <div class="yt-about-item">
+                    <h4>リンク</h4>
+                    <div class="yt-about-links">
+                        {% if channel.website %}
+                        <a href="{{ channel.website }}" class="yt-about-link" target="_blank" rel="noopener">
+                            <i class="fas fa-globe"></i>
+                            ウェブサイト
+                        </a>
+                        {% endif %}
+                        {% if channel.twitter_handle %}
+                        <a href="https://twitter.com/{{ channel.twitter_handle }}" class="yt-about-link" target="_blank" rel="noopener">
+                            <i class="fab fa-twitter"></i>
+                            Twitter
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.yt-channel-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px;
+}
+
+.yt-channel-header {
+    margin-bottom: 40px;
+}
+
+.yt-channel-banner {
+    width: 100%;
+    height: 200px;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 24px;
+    background: linear-gradient(135deg, #1f1f1f 0%, #2a2a2a 100%);
+}
+
+.yt-channel-banner img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.yt-channel-info-header {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+}
+
+.yt-channel-avatar-large {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+    border: 4px solid var(--yt-border);
+}
+
+.yt-channel-avatar-large img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.yt-default-avatar-large {
+    width: 100%;
+    height: 100%;
+    background: var(--yt-red);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 36px;
+    font-weight: 600;
+}
+
+.yt-channel-meta {
+    flex: 1;
+    min-width: 0;
+}
+
+.yt-channel-title {
+    color: var(--yt-text);
+    font-size: 32px;
+    font-weight: 700;
+    margin: 0 0 8px 0;
+    line-height: 1.2;
+}
+
+.yt-channel-stats {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.yt-stat {
+    color: var(--yt-text-secondary);
+    font-size: 14px;
+}
+
+.yt-channel-bio {
+    color: var(--yt-text);
+    margin-bottom: 16px;
+    line-height: 1.5;
+    max-width: 600px;
+}
+
+.yt-channel-links {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.yt-channel-link {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--yt-text-secondary);
+    text-decoration: none;
+    font-size: 14px;
+    transition: color 0.2s;
+}
+
+.yt-channel-link:hover {
+    color: var(--yt-text);
+}
+
+.yt-channel-actions {
+    flex-shrink: 0;
+}
+
+.yt-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border-radius: 20px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s;
+    font-size: 14px;
+}
+
+.yt-btn-subscribe {
+    background: var(--yt-red);
+    color: white;
+}
+
+.yt-btn-subscribe:hover {
+    background: var(--yt-dark-red);
+    color: white;
+}
+
+.yt-btn-subscribed {
+    background: var(--yt-border);
+    color: var(--yt-text);
+}
+
+.yt-btn-subscribed:hover {
+    background: #ff4444;
+    color: white;
+}
+
+.yt-btn-secondary {
+    background: var(--yt-border);
+    color: var(--yt-text);
+}
+
+.yt-btn-secondary:hover {
+    background: var(--yt-hover);
+    color: var(--yt-text);
+}
+
+.yt-btn-primary {
+    background: var(--yt-red);
+    color: white;
+}
+
+.yt-btn-primary:hover {
+    background: var(--yt-dark-red);
+    color: white;
+}
+
+.yt-channel-content {
+    background: var(--yt-card-bg);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.yt-channel-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--yt-border);
+}
+
+.yt-tab {
+    padding: 16px 24px;
+    color: var(--yt-text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+    transition: all 0.2s;
+    border-bottom: 2px solid transparent;
+}
+
+.yt-tab:hover {
+    color: var(--yt-text);
+    background: var(--yt-hover);
+}
+
+.yt-tab.active {
+    color: var(--yt-red);
+    border-bottom-color: var(--yt-red);
+}
+
+.yt-tab-content {
+    display: none;
+    padding: 24px;
+}
+
+.yt-tab-content.active {
+    display: block;
+}
+
+.yt-videos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 24px;
+}
+
+.yt-video-card {
+    background: var(--yt-bg);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    border: 1px solid var(--yt-border);
+}
+
+.yt-video-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    border-color: var(--yt-red);
+}
+
+.yt-video-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+
+.yt-video-thumbnail {
+    position: relative;
+    width: 100%;
+    height: 160px;
+    overflow: hidden;
+}
+
+.yt-video-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.yt-default-thumbnail {
+    width: 100%;
+    height: 100%;
+    background: var(--yt-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--yt-text-secondary);
+    font-size: 24px;
+}
+
+.yt-video-duration {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    background: rgba(0,0,0,0.8);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.yt-video-info {
+    padding: 16px;
+}
+
+.yt-video-title {
+    color: var(--yt-text);
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    line-height: 1.3;
+}
+
+.yt-video-title a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.yt-video-title a:hover {
+    color: var(--yt-red);
+}
+
+.yt-video-stats {
+    color: var(--yt-text-secondary);
+    font-size: 12px;
+    margin-bottom: 4px;
+    display: flex;
+    gap: 12px;
+}
+
+.yt-stat-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.yt-video-date {
+    color: var(--yt-text-secondary);
+    font-size: 12px;
+    margin: 0;
+}
+
+.yt-empty-state {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.yt-empty-content {
+    margin: 0 auto;
+    max-width: 400px;
+}
+
+.yt-empty-content h3 {
+    color: var(--yt-text);
+    margin-bottom: 8px;
+}
+
+.yt-empty-content p {
+    color: var(--yt-text-secondary);
+    margin-bottom: 24px;
+}
+
+.yt-about-section {
+    max-width: 800px;
+}
+
+.yt-about-section h3 {
+    color: var(--yt-text);
+    font-size: 24px;
+    margin-bottom: 24px;
+}
+
+.yt-about-item {
+    margin-bottom: 32px;
+}
+
+.yt-about-item h4 {
+    color: var(--yt-text);
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+.yt-about-item p {
+    color: var(--yt-text);
+    line-height: 1.6;
+    margin: 0;
+}
+
+.yt-about-details {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.yt-detail-row {
+    display: flex;
+    gap: 16px;
+}
+
+.yt-detail-label {
+    color: var(--yt-text-secondary);
+    min-width: 120px;
+    font-weight: 500;
+}
+
+.yt-detail-value {
+    color: var(--yt-text);
+}
+
+.yt-about-links {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.yt-about-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--yt-text-secondary);
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.yt-about-link:hover {
+    color: var(--yt-red);
+}
+
+@media (max-width: 768px) {
+    .yt-channel-container {
+        padding: 0 16px;
+    }
+    
+    .yt-channel-info-header {
+        flex-direction: column;
+        text-align: center;
+        gap: 16px;
+    }
+    
+    .yt-channel-avatar-large {
+        width: 80px;
+        height: 80px;
+        align-self: center;
+    }
+    
+    .yt-channel-title {
+        font-size: 24px;
+    }
+    
+    .yt-channel-stats {
+        justify-content: center;
+    }
+    
+    .yt-videos-grid {
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 16px;
+    }
+    
+    .yt-tab-content {
+        padding: 16px;
+    }
+}
+</style>
+
+<script>
+// Tab switching
+document.querySelectorAll('.yt-tab').forEach(tab => {
+    tab.addEventListener('click', function() {
+        const tabName = this.dataset.tab;
+        
+        // Remove active class from all tabs and content
+        document.querySelectorAll('.yt-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.yt-tab-content').forEach(c => c.classList.remove('active'));
+        
+        // Add active class to clicked tab and corresponding content
+        this.classList.add('active');
+        document.getElementById(tabName + '-tab').classList.add('active');
+    });
+});
+
+// Channel subscription toggle
+async function toggleChannelSubscription(channelId) {
+    const subscribeBtn = document.getElementById('subscribeBtn');
+    const subscribeText = document.getElementById('subscribeText');
+    const subscribeIcon = document.getElementById('subscribeIcon');
+    
+    if (subscribeBtn.disabled) return;
+    
+    subscribeBtn.disabled = true;
+    
+    try {
+        const response = await fetch('{% url "toggle_subscription" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                channel_id: channelId
+            })
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            
+            if (data.subscribed) {
+                subscribeBtn.className = 'yt-btn yt-btn-subscribed';
+                subscribeText.textContent = '登録済み';
+                showNotification('チャンネルに登録しました', 'success');
+            } else {
+                subscribeBtn.className = 'yt-btn yt-btn-subscribe';
+                subscribeText.textContent = 'チャンネル登録';
+                showNotification('チャンネル登録を解除しました', 'info');
+            }
+        } else {
+            const data = await response.json();
+            showNotification(data.error || 'エラーが発生しました', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showNotification('エラーが発生しました', 'error');
+    } finally {
+        subscribeBtn.disabled = false;
+    }
+}
+
+// Notification function (if not already defined)
+function showNotification(message, type = 'info') {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `yt-notification yt-notification-${type}`;
+    notification.innerHTML = `
+        <div class="yt-notification-content">
+            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    
+    // Add styles if not already added
+    if (!document.querySelector('#notification-styles')) {
+        const style = document.createElement('style');
+        style.id = 'notification-styles';
+        style.textContent = `
+            .yt-notification {
+                position: fixed;
+                top: 80px;
+                right: 20px;
+                background: var(--yt-card-bg);
+                border-radius: 8px;
+                padding: 12px 16px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                z-index: 10000;
+                transform: translateX(100%);
+                transition: transform 0.3s ease;
+                border-left: 4px solid #4285f4;
+            }
+            
+            .yt-notification.show {
+                transform: translateX(0);
+            }
+            
+            .yt-notification-success {
+                border-left: 4px solid #00d563;
+            }
+            
+            .yt-notification-error {
+                border-left: 4px solid #ff4444;
+            }
+            
+            .yt-notification-content {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                color: var(--yt-text);
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    // Add to page
+    document.body.appendChild(notification);
+    
+    // Trigger animation
+    setTimeout(() => {
+        notification.classList.add('show');
+    }, 100);
+    
+    // Remove after delay
+    setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, 3000);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,1455 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ショート - YouTube Clone</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+    --yt-red: #ff0000;
+    --yt-dark-red: #cc0000;
+    --yt-bg: #0f0f0f;
+    --yt-card-bg: #1a1a1a;
+    --yt-text: #ffffff;
+    --yt-text-secondary: #aaaaaa;
+    --yt-border: #303030;
+    --yt-hover: #272727;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Roboto', sans-serif;
+    background-color: #000;
+    color: var(--yt-text);
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+/* ヘッダー */
+.yt-shorts-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 56px;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    z-index: 1000;
+}
+
+.yt-shorts-header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.yt-shorts-back-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.yt-shorts-back-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.yt-shorts-logo {
+    font-size: 18px;
+    font-weight: 500;
+    color: white;
+}
+
+/* メインコンテナ */
+.yt-shorts-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #000;
+    overflow: hidden;
+}
+
+.yt-shorts-player {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.yt-shorts-video-container {
+    position: relative;
+    width: 100%;
+    max-width: 405px;
+    height: 100vh;
+    background: #000;
+    display: none;
+    margin: 0 auto;
+}
+
+.yt-shorts-video-container.active {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.yt-shorts-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    cursor: pointer;
+    border-radius: 0;
+}
+
+.yt-shorts-placeholder {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.yt-shorts-placeholder-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    color: rgba(255, 255, 255, 0.8);
+    text-align: center;
+}
+
+.yt-shorts-placeholder-content i {
+    font-size: 48px;
+}
+
+.yt-shorts-placeholder-content span {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.yt-shorts-controls {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    right: 70px;
+    z-index: 10;
+    color: white;
+}
+
+.yt-shorts-info {
+    margin-bottom: 15px;
+}
+
+.yt-shorts-title {
+    font-size: 16px;
+    font-weight: 500;
+    margin-bottom: 8px;
+    line-height: 1.3;
+    max-height: 3.9em;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+}
+
+.yt-shorts-channel {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.yt-shorts-channel-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--yt-card-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.yt-shorts-actions {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    z-index: 10;
+}
+
+.yt-shorts-action {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    color: white;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+}
+
+.yt-shorts-action:hover {
+    transform: scale(1.15) translateY(-2px);
+    color: white;
+}
+
+.yt-shorts-action::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 60px;
+    height: 60px;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    border-radius: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: -1;
+}
+
+.yt-shorts-action:hover::before {
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.yt-shorts-action:active {
+    transform: scale(0.95);
+}
+
+.yt-shorts-action-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    backdrop-filter: blur(10px);
+}
+
+.yt-shorts-action-text {
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.yt-shorts-action.active .yt-shorts-action-icon {
+    background: rgba(255, 0, 0, 0.2);
+    border: 2px solid var(--yt-red);
+}
+
+.yt-shorts-action.active i {
+    color: var(--yt-red) !important;
+}
+
+.yt-feedback-toast {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 24px;
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 10000;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.yt-feedback-toast.show {
+    opacity: 1;
+}
+
+.yt-feedback-toast.error {
+    background: rgba(255, 68, 68, 0.9);
+}
+
+.yt-shorts-navigation {
+    position: absolute;
+    right: 80px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    z-index: 5;
+}
+
+.yt-shorts-nav-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.5);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    backdrop-filter: blur(10px);
+    font-size: 16px;
+    opacity: 0.8;
+}
+
+.yt-shorts-nav-btn:hover {
+    background: rgba(0, 0, 0, 0.7);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: scale(1.05);
+    opacity: 1;
+}
+
+.yt-shorts-nav-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    background: rgba(0, 0, 0, 0.2);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.yt-shorts-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.3);
+    z-index: 10;
+}
+
+.yt-shorts-progress-bar {
+    height: 100%;
+    background: var(--yt-red);
+    width: 0%;
+    transition: width 0.1s;
+}
+
+.yt-shorts-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(transparent 60%, rgba(0,0,0,0.3) 100%);
+    pointer-events: none;
+}
+
+.yt-shorts-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: white;
+    text-align: center;
+    padding: 40px;
+}
+
+.yt-shorts-empty-icon {
+    font-size: 64px;
+    margin-bottom: 24px;
+    color: var(--yt-red);
+}
+
+.yt-shorts-empty h2 {
+    font-size: 24px;
+    margin-bottom: 12px;
+}
+
+.yt-shorts-empty p {
+    font-size: 16px;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 24px;
+}
+
+.yt-shorts-upload-btn {
+    background: var(--yt-red);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 24px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.yt-shorts-upload-btn:hover {
+    background: var(--yt-dark-red);
+}
+
+/* モバイル対応 */
+@media (max-width: 768px) {
+    .yt-shorts-container {
+        top: 56px;
+    }
+    
+    .yt-shorts-video-container {
+        max-width: none;
+    }
+    
+    .yt-shorts-controls {
+        right: 60px;
+        bottom: 100px;
+    }
+    
+    .yt-shorts-actions {
+        right: 12px;
+        bottom: 100px;
+        gap: 16px;
+    }
+    
+    .yt-shorts-action-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 18px;
+    }
+    
+    .yt-shorts-navigation {
+        right: 70px;
+    }
+    
+    .yt-shorts-nav-btn {
+        width: 44px;
+        height: 44px;
+        font-size: 14px;
+    }
+}
+
+/* Hide main sidebar when viewing shorts */
+body.shorts-mode .yt-sidebar {
+    display: none;
+}
+
+body.shorts-mode .yt-main {
+    margin-left: 0;
+}
+</style>
+</head>
+<body>
+<!-- ヘッダー -->
+<div class="yt-shorts-header">
+    <div class="yt-shorts-header-left">
+        <button class="yt-shorts-back-btn" onclick="history.back()">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+        <div class="yt-shorts-logo">ショート</div>
+    </div>
+</div>
+
+<div class="yt-shorts-container" id="shortsContainer">
+    {% if shorts_videos %}
+        <div class="yt-shorts-player" id="shortsPlayer">
+            {% for video in shorts_videos %}
+            <div class="yt-shorts-video-container {% if forloop.first %}active{% endif %}" data-video-id="{{ video.id }}">
+                {% if video.video_file %}
+                    <video class="yt-shorts-video" 
+                           src="{{ video.video_file.url }}" 
+                           muted 
+                           loop 
+                           playsinline
+                           {% if forloop.first %}autoplay{% endif %}>
+                    </video>
+                {% else %}
+                    <div class="yt-shorts-placeholder">
+                        <div class="yt-shorts-placeholder-content">
+                            <i class="fas fa-play-circle"></i>
+                            <span>動画ファイルが見つかりません</span>
+                        </div>
+                    </div>
+                {% endif %}
+                
+                <div class="yt-shorts-overlay"></div>
+                
+                <div class="yt-shorts-controls">
+                    <div class="yt-shorts-info">
+                        <div class="yt-shorts-title">{{ video.title }}</div>
+                        <div class="yt-shorts-channel">
+                            <div class="yt-shorts-channel-avatar">
+                                {{ video.uploaded_by.username|first|upper }}
+                            </div>
+                            <span>{{ video.uploaded_by.username }}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="yt-shorts-actions">
+                    <div class="yt-shorts-action yt-like-btn" onclick="toggleLike({{ video.id }})">
+                        <div class="yt-shorts-action-icon">
+                            <i class="far fa-thumbs-up"></i>
+                        </div>
+                        <div class="yt-shorts-action-text yt-like-count">{{ video.get_like_count }}</div>
+                    </div>
+                    
+                    <div class="yt-shorts-action yt-dislike-btn" onclick="toggleDislike({{ video.id }})">
+                        <div class="yt-shorts-action-icon">
+                            <i class="far fa-thumbs-down"></i>
+                        </div>
+                        <div class="yt-shorts-action-text yt-dislike-count">{{ video.get_dislike_count }}</div>
+                    </div>
+                    
+                    <div class="yt-shorts-action yt-comment-btn" onclick="showComments({{ video.id }})">
+                        <div class="yt-shorts-action-icon">
+                            <i class="far fa-comment"></i>
+                        </div>
+                        <div class="yt-shorts-action-text yt-comment-count">{{ video.get_comment_count }}</div>
+                    </div>
+                    
+                    <div class="yt-shorts-action yt-share-btn" onclick="shareVideo({{ video.id }})">
+                        <div class="yt-shorts-action-icon">
+                            <i class="fas fa-share"></i>
+                        </div>
+                        <div class="yt-shorts-action-text">共有</div>
+                    </div>
+                </div>
+                
+                <div class="yt-shorts-progress">
+                    <div class="yt-shorts-progress-bar"></div>
+                </div>
+            </div>
+            {% endfor %}
+            
+            <div class="yt-shorts-navigation">
+                <button class="yt-shorts-nav-btn" id="prevBtn" onclick="previousVideo()">
+                    <i class="fas fa-chevron-up"></i>
+                </button>
+                <button class="yt-shorts-nav-btn" id="nextBtn" onclick="nextVideo()">
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+            </div>
+        </div>
+    {% else %}
+        <div class="yt-shorts-empty">
+            <div class="yt-shorts-empty-icon">
+                <i class="fas fa-play-circle"></i>
+            </div>
+            <h2>ショート動画がありません</h2>
+            <p>まだショート動画がアップロードされていません。<br>最初のショート動画を作成しましょう！</p>
+            <button class="yt-shorts-upload-btn" onclick="location.href='/upload/'">
+                <i class="fas fa-plus"></i> ショート動画を作成
+            </button>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+// Global variables
+let currentVideoIndex = 0;
+let videoContainers = [];
+let videos = [];
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Shorts page loading...');
+    
+    // Hide sidebar for shorts experience
+    document.body.classList.add('shorts-mode');
+    
+    // Initialize variables
+    videoContainers = document.querySelectorAll('.yt-shorts-video-container');
+    videos = document.querySelectorAll('.yt-shorts-video');
+    
+    console.log('Found', videos.length, 'videos');
+    console.log('Found', videoContainers.length, 'video containers');
+    
+    if (videos.length === 0 || videoContainers.length === 0) {
+        console.log('No videos found, exiting...');
+        return;
+    }
+    
+    // Ensure first video is active
+    videoContainers.forEach((container, index) => {
+        if (index === 0) {
+            container.classList.add('active');
+            console.log('Set first video as active');
+        } else {
+            container.classList.remove('active');
+        }
+    });
+    
+    // Add floating particles for ambient effect
+    createFloatingParticles();
+    
+    // Initialize first video controls
+    updateVideoControls();
+    
+    // Try to play first video
+    const firstVideo = getCurrentVideo();
+    if (firstVideo) {
+        console.log('Attempting to play first video');
+        firstVideo.play().catch(e => {
+            console.log('Could not autoplay first video (normal for many browsers):', e);
+        });
+    }
+    
+    // Play/pause on video click
+    videos.forEach(video => {
+        video.addEventListener('click', function() {
+            if (video.paused) {
+                video.play();
+            } else {
+                video.pause();
+            }
+        });
+        
+        // Update progress bar
+        video.addEventListener('timeupdate', function() {
+            if (video === getCurrentVideo()) {
+                const progressBar = video.closest('.yt-shorts-video-container').querySelector('.yt-shorts-progress-bar');
+                const progress = (video.currentTime / video.duration) * 100;
+                progressBar.style.width = progress + '%';
+            }
+        });
+        
+        // Auto play next video when current ends
+        video.addEventListener('ended', function() {
+            if (video === getCurrentVideo()) {
+                nextVideo();
+            }
+        });
+    });
+    
+    // Keyboard navigation
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'ArrowUp' || e.key === 'k') {
+            e.preventDefault();
+            previousVideo();
+        } else if (e.key === 'ArrowDown' || e.key === 'j') {
+            e.preventDefault();
+            nextVideo();
+        } else if (e.key === ' ') {
+            e.preventDefault();
+            const currentVideo = getCurrentVideo();
+            if (currentVideo.paused) {
+                currentVideo.play();
+            } else {
+                currentVideo.pause();
+            }
+        }
+    });
+    
+    // Mouse wheel navigation (improved)
+    let wheelCooldown = false;
+    
+    // Add event listener to the document for better compatibility
+    document.addEventListener('wheel', function(e) {
+        // Only handle wheel events when on shorts page
+        const shortsContainer = document.getElementById('shortsContainer');
+        if (!shortsContainer) return;
+        
+        // Prevent default scrolling
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // Debug logging
+        console.log('Wheel event detected, deltaY:', e.deltaY);
+        
+        // Cooldown to prevent rapid firing
+        if (wheelCooldown) {
+            console.log('Wheel event in cooldown');
+            return;
+        }
+        
+        wheelCooldown = true;
+        
+        // Threshold for wheel sensitivity
+        const threshold = 50;
+        
+        // Immediate response for better UX
+        if (e.deltaY > threshold) {
+            console.log('Next video triggered by wheel (scroll down)');
+            nextVideo();
+        } else if (e.deltaY < -threshold) {
+            console.log('Previous video triggered by wheel (scroll up)');
+            previousVideo();
+        }
+        
+        // Reset cooldown after shorter time for better responsiveness
+        setTimeout(() => {
+            wheelCooldown = false;
+        }, 200);
+        
+    }, { passive: false });
+    
+    // Keyboard navigation for backup
+    document.addEventListener('keydown', function(e) {
+        // Only handle when shorts container exists
+        const shortsContainer = document.getElementById('shortsContainer');
+        if (!shortsContainer) return;
+        
+        if (e.key === 'ArrowDown' || e.key === 'j') {
+            e.preventDefault();
+            console.log('Next video triggered by keyboard');
+            nextVideo();
+        } else if (e.key === 'ArrowUp' || e.key === 'k') {
+            e.preventDefault();
+            console.log('Previous video triggered by keyboard');
+            previousVideo();
+        }
+    });
+    
+    // Touch swipe navigation (improved)
+    let startY = 0;
+    let endY = 0;
+    let startTime = 0;
+    let isDragging = false;
+    
+    document.addEventListener('touchstart', function(e) {
+        startY = e.touches[0].clientY;
+        startTime = Date.now();
+        isDragging = false;
+    }, { passive: true });
+    
+    document.addEventListener('touchmove', function(e) {
+        if (!isDragging) {
+            const currentY = e.touches[0].clientY;
+            const diffY = Math.abs(currentY - startY);
+            
+            // Start dragging if movement is significant and primarily vertical
+            if (diffY > 10) {
+                isDragging = true;
+                e.preventDefault();
+            }
+        } else {
+            e.preventDefault();
+        }
+    }, { passive: false });
+    
+    document.addEventListener('touchend', function(e) {
+        if (!isDragging) return;
+        
+        endY = e.changedTouches[0].clientY;
+        const diffY = startY - endY;
+        const timeDiff = Date.now() - startTime;
+        const velocity = Math.abs(diffY) / timeDiff;
+        
+        // Require minimum distance and reasonable velocity
+        if (Math.abs(diffY) > 50 && velocity > 0.3) {
+            if (diffY > 0) {
+                nextVideo(); // Swipe up = next video
+            } else {
+                previousVideo(); // Swipe down = previous video
+            }
+        }
+        
+        isDragging = false;
+    }, { passive: true });
+});
+
+function getCurrentVideo() {
+    return document.querySelector('.yt-shorts-video-container.active .yt-shorts-video');
+}
+
+function getCurrentVideoContainer() {
+    return document.querySelector('.yt-shorts-video-container.active');
+}
+
+function nextVideo() {
+    console.log('nextVideo called, current index:', currentVideoIndex);
+    
+    if (!videoContainers || videoContainers.length === 0) {
+        console.log('No video containers found');
+        return;
+    }
+    
+    if (currentVideoIndex < videoContainers.length - 1) {
+        const currentContainer = videoContainers[currentVideoIndex];
+        const nextContainer = videoContainers[currentVideoIndex + 1];
+        
+        console.log('Switching from video', currentVideoIndex, 'to', currentVideoIndex + 1);
+        
+        // Pause current video safely
+        const currentVideo = getCurrentVideo();
+        if (currentVideo) {
+            try {
+                currentVideo.pause();
+                currentVideo.currentTime = 0;
+            } catch (e) {
+                console.log('Could not pause current video:', e);
+            }
+        }
+        
+        // Switch active states
+        currentContainer.classList.remove('active');
+        nextContainer.classList.add('active');
+        
+        // Update index
+        currentVideoIndex++;
+        
+        // Play next video safely
+        const nextVideo = getCurrentVideo();
+        if (nextVideo) {
+            try {
+                nextVideo.play().catch(e => {
+                    console.log('Could not play next video:', e);
+                });
+            } catch (e) {
+                console.log('Error playing next video:', e);
+            }
+        }
+        
+        updateVideoControls();
+    } else {
+        console.log('Already at last video');
+    }
+}
+
+function previousVideo() {
+    console.log('previousVideo called, current index:', currentVideoIndex);
+    
+    if (!videoContainers || videoContainers.length === 0) {
+        console.log('No video containers found');
+        return;
+    }
+    
+    if (currentVideoIndex > 0) {
+        const currentContainer = videoContainers[currentVideoIndex];
+        const prevContainer = videoContainers[currentVideoIndex - 1];
+        
+        console.log('Switching from video', currentVideoIndex, 'to', currentVideoIndex - 1);
+        
+        // Pause current video safely
+        const currentVideo = getCurrentVideo();
+        if (currentVideo) {
+            try {
+                currentVideo.pause();
+                currentVideo.currentTime = 0;
+            } catch (e) {
+                console.log('Could not pause current video:', e);
+            }
+        }
+        
+        // Switch active states
+        currentContainer.classList.remove('active');
+        prevContainer.classList.add('active');
+        
+        // Update index
+        currentVideoIndex--;
+        
+        // Play previous video safely
+        const prevVideo = getCurrentVideo();
+        if (prevVideo) {
+            try {
+                prevVideo.play().catch(e => {
+                    console.log('Could not play previous video:', e);
+                });
+            } catch (e) {
+                console.log('Error playing previous video:', e);
+            }
+        }
+        
+        updateVideoControls();
+    } else {
+        console.log('Already at first video');
+    }
+}
+
+function updateVideoControls() {
+    console.log('updateVideoControls called, current index:', currentVideoIndex);
+    
+    if (!videoContainers) {
+        console.log('videoContainers not initialized');
+        return;
+    }
+    
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    
+    if (prevBtn) {
+        prevBtn.disabled = currentVideoIndex === 0;
+        console.log('Previous button disabled:', prevBtn.disabled);
+    }
+    if (nextBtn) {
+        nextBtn.disabled = currentVideoIndex === videoContainers.length - 1;
+        console.log('Next button disabled:', nextBtn.disabled);
+    }
+}
+
+function toggleLike(videoId) {
+    const currentContainer = document.querySelector('.yt-shorts-video-container.active');
+    const likeBtn = currentContainer.querySelector('.yt-like-btn');
+    const dislikeBtn = currentContainer.querySelector('.yt-dislike-btn');
+    const likeCount = currentContainer.querySelector('.yt-like-count');
+    
+    // Add loading state
+    likeBtn.style.opacity = '0.5';
+    
+    fetch('/api/videos/like/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            video_id: videoId,
+            like_type: 1
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update like button state
+            if (data.liked) {
+                likeBtn.classList.add('active');
+                likeBtn.querySelector('i').className = 'fas fa-thumbs-up';
+                dislikeBtn.classList.remove('active');
+                dislikeBtn.querySelector('i').className = 'far fa-thumbs-down';
+            } else {
+                likeBtn.classList.remove('active');
+                likeBtn.querySelector('i').className = 'far fa-thumbs-up';
+            }
+            
+            // Update count
+            likeCount.textContent = data.like_count || '0';
+            
+            // Show feedback animation
+            showActionFeedback(likeBtn, data.liked ? 'いいね！' : 'いいねを取り消しました');
+        }
+        likeBtn.style.opacity = '1';
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        likeBtn.style.opacity = '1';
+        showActionFeedback(likeBtn, 'エラーが発生しました', true);
+    });
+}
+
+function toggleDislike(videoId) {
+    const currentContainer = document.querySelector('.yt-shorts-video-container.active');
+    const likeBtn = currentContainer.querySelector('.yt-like-btn');
+    const dislikeBtn = currentContainer.querySelector('.yt-dislike-btn');
+    const dislikeCount = currentContainer.querySelector('.yt-dislike-count');
+    
+    // Add loading state
+    dislikeBtn.style.opacity = '0.5';
+    
+    fetch('/api/videos/like/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            video_id: videoId,
+            like_type: -1
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update dislike button state
+            if (data.disliked) {
+                dislikeBtn.classList.add('active');
+                dislikeBtn.querySelector('i').className = 'fas fa-thumbs-down';
+                likeBtn.classList.remove('active');
+                likeBtn.querySelector('i').className = 'far fa-thumbs-up';
+            } else {
+                dislikeBtn.classList.remove('active');
+                dislikeBtn.querySelector('i').className = 'far fa-thumbs-down';
+            }
+            
+            // Update count
+            dislikeCount.textContent = data.dislike_count || '0';
+            
+            // Show feedback animation
+            showActionFeedback(dislikeBtn, data.disliked ? 'よくないね' : 'よくないねを取り消しました');
+        }
+        dislikeBtn.style.opacity = '1';
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        dislikeBtn.style.opacity = '1';
+        showActionFeedback(dislikeBtn, 'エラーが発生しました', true);
+    });
+}
+
+function showComments(videoId) {
+    const commentBtn = document.querySelector(`[data-video-id="${videoId}"] .yt-comment-btn`);
+    
+    // Add animation feedback
+    commentBtn.style.transform = 'scale(1.2)';
+    setTimeout(() => {
+        commentBtn.style.transform = 'scale(1)';
+    }, 150);
+    
+    // Create comment modal
+    const modal = document.createElement('div');
+    modal.className = 'yt-comment-modal';
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.8);
+        z-index: 10000;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+    `;
+    
+    modal.innerHTML = `
+        <div class="yt-comment-panel" style="background: var(--yt-card-bg); width: 100%; max-width: 600px; height: 70vh; border-radius: 16px 16px 0 0; display: flex; flex-direction: column;">
+            <div style="padding: 16px; border-bottom: 1px solid var(--yt-border); display: flex; align-items: center; justify-content: space-between;">
+                <h3 style="margin: 0; font-size: 18px; color: var(--yt-text);">コメント</h3>
+                <button onclick="closeComments()" style="background: none; border: none; color: var(--yt-text-secondary); font-size: 20px; cursor: pointer; padding: 4px;">×</button>
+            </div>
+            <div class="yt-comments-list" style="flex: 1; overflow-y: auto; padding: 16px;">
+                <div id="comments-loading" style="text-align: center; color: var(--yt-text-secondary); padding: 20px;">
+                    <i class="fas fa-spinner fa-spin"></i> コメントを読み込み中...
+                </div>
+                <div id="comments-container" style="display: none;"></div>
+            </div>
+            <div style="padding: 16px; border-top: 1px solid var(--yt-border);">
+                <div style="display: flex; gap: 12px; align-items: center;">
+                    <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--yt-red); display: flex; align-items: center; justify-content: center; color: white; font-weight: 500; font-size: 14px;">
+                        U
+                    </div>
+                    <input type="text" id="comment-input" placeholder="コメントを追加..." style="flex: 1; background: var(--yt-bg); border: 1px solid var(--yt-border); border-radius: 20px; padding: 8px 16px; color: var(--yt-text); font-size: 14px;">
+                    <button onclick="submitComment(${videoId})" style="background: var(--yt-red); color: white; border: none; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Load comments
+    loadComments(videoId);
+    
+    // Focus input
+    setTimeout(() => {
+        document.getElementById('comment-input').focus();
+    }, 100);
+}
+
+function closeComments() {
+    const modal = document.querySelector('.yt-comment-modal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+function loadComments(videoId) {
+    fetch(`/api/comments/?video_id=${videoId}`)
+        .then(response => response.json())
+        .then(data => {
+            const loading = document.getElementById('comments-loading');
+            const container = document.getElementById('comments-container');
+            
+            if (loading) loading.style.display = 'none';
+            if (container) {
+                container.style.display = 'block';
+                
+                if (data.comments && data.comments.length > 0) {
+                    container.innerHTML = data.comments.map(comment => `
+                        <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+                            <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--yt-red); display: flex; align-items: center; justify-content: center; color: white; font-weight: 500; font-size: 12px; flex-shrink: 0;">
+                                ${comment.user_name.charAt(0).toUpperCase()}
+                            </div>
+                            <div style="flex: 1;">
+                                <div style="font-weight: 500; font-size: 13px; color: var(--yt-text); margin-bottom: 4px;">
+                                    ${comment.user_name} <span style="color: var(--yt-text-secondary); font-weight: 400;">${comment.created_at}</span>
+                                </div>
+                                <div style="color: var(--yt-text); font-size: 14px; line-height: 1.4;">
+                                    ${comment.text}
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = `
+                        <div style="text-align: center; color: var(--yt-text-secondary); padding: 40px;">
+                            <i class="far fa-comment" style="font-size: 48px; margin-bottom: 16px; display: block;"></i>
+                            まだコメントがありません。<br>最初のコメントを投稿してみましょう！
+                        </div>
+                    `;
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error loading comments:', error);
+            const loading = document.getElementById('comments-loading');
+            if (loading) {
+                loading.innerHTML = '<span style="color: #ff4444;">コメントの読み込みに失敗しました</span>';
+            }
+        });
+}
+
+function submitComment(videoId) {
+    const input = document.getElementById('comment-input');
+    const text = input.value.trim();
+    
+    if (!text) return;
+    
+    const submitBtn = event.target.closest('button');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    
+    fetch('/api/comments/add/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            video_id: videoId,
+            content: text
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            input.value = '';
+            loadComments(videoId); // Reload comments
+            showActionFeedback(input, 'コメントを投稿しました！');
+            
+            // Update comment count
+            const currentContainer = document.querySelector('.yt-shorts-video-container.active');
+            const commentCount = currentContainer.querySelector('.yt-comment-count');
+            if (commentCount) {
+                const currentCount = parseInt(commentCount.textContent) || 0;
+                commentCount.textContent = currentCount + 1;
+            }
+        } else {
+            showActionFeedback(input, 'コメントの投稿に失敗しました', true);
+        }
+    })
+    .catch(error => {
+        console.error('Error submitting comment:', error);
+        showActionFeedback(input, 'エラーが発生しました', true);
+    })
+    .finally(() => {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i>';
+    });
+}
+
+function shareVideo(videoId) {
+    const shareBtn = document.querySelector(`[data-video-id="${videoId}"] .yt-share-btn`);
+    
+    // Add animation feedback
+    shareBtn.style.transform = 'scale(1.2)';
+    setTimeout(() => {
+        shareBtn.style.transform = 'scale(1)';
+    }, 150);
+    
+    const currentVideo = document.querySelector(`[data-video-id="${videoId}"]`);
+    const videoTitle = currentVideo.querySelector('.yt-shorts-title').textContent;
+    const shareUrl = `${window.location.origin}/shorts/`;
+    
+    if (navigator.share) {
+        navigator.share({
+            title: `ショート動画: ${videoTitle}`,
+            text: `この面白いショート動画をチェック！`,
+            url: shareUrl
+        }).then(() => {
+            showActionFeedback(shareBtn, '共有しました！');
+        }).catch((error) => {
+            console.log('Share failed:', error);
+            fallbackShare(shareUrl, shareBtn);
+        });
+    } else {
+        fallbackShare(shareUrl, shareBtn);
+    }
+}
+
+function fallbackShare(url, button) {
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(url).then(() => {
+            showActionFeedback(button, 'URLをコピーしました！');
+        }).catch(() => {
+            showActionFeedback(button, 'コピーに失敗しました', true);
+        });
+    } else {
+        // Old browsers fallback
+        const textArea = document.createElement('textarea');
+        textArea.value = url;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        
+        try {
+            const successful = document.execCommand('copy');
+            showActionFeedback(button, successful ? 'URLをコピーしました！' : 'コピーに失敗しました', !successful);
+        } catch (err) {
+            showActionFeedback(button, 'コピーに失敗しました', true);
+        }
+        
+        document.body.removeChild(textArea);
+    }
+}
+
+function showActionFeedback(element, message, isError = false) {
+    // Remove existing toast
+    const existingToast = document.querySelector('.yt-feedback-toast');
+    if (existingToast) {
+        existingToast.remove();
+    }
+    
+    // Create new toast
+    const toast = document.createElement('div');
+    toast.className = `yt-feedback-toast ${isError ? 'error' : ''}`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    // Show toast
+    setTimeout(() => {
+        toast.classList.add('show');
+    }, 10);
+    
+    // Hide and remove toast
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 300);
+    }, 2000);
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Enhanced visual effects
+function createFloatingParticles() {
+    const container = document.getElementById('shortsContainer');
+    if (!container) return;
+    
+    for (let i = 0; i < 10; i++) {
+        createParticle(container);
+    }
+    
+    // Create new particles periodically
+    setInterval(() => {
+        if (document.querySelectorAll('.floating-particle').length < 15) {
+            createParticle(container);
+        }
+    }, 3000);
+}
+
+function createParticle(container) {
+    const particle = document.createElement('div');
+    particle.className = 'floating-particle';
+    particle.style.cssText = `
+        position: absolute;
+        width: ${Math.random() * 6 + 2}px;
+        height: ${Math.random() * 6 + 2}px;
+        background: rgba(255, 255, 255, ${Math.random() * 0.3 + 0.1});
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 1;
+        left: ${Math.random() * 100}%;
+        top: ${Math.random() * 100}%;
+        animation: floatUpAndFade ${Math.random() * 10 + 10}s linear infinite;
+    `;
+    
+    container.appendChild(particle);
+    
+    // Remove particle after animation
+    setTimeout(() => {
+        if (particle.parentNode) {
+            particle.parentNode.removeChild(particle);
+        }
+    }, 20000);
+}
+
+// Enhanced action feedback with particles
+function showActionFeedback(element, message, isError = false) {
+    // Create particles on action
+    createActionParticles(element);
+    
+    // Remove existing toast
+    const existingToast = document.querySelector('.yt-feedback-toast');
+    if (existingToast) {
+        existingToast.remove();
+    }
+    
+    // Create new toast with enhanced styling
+    const toast = document.createElement('div');
+    toast.className = `yt-feedback-toast ${isError ? 'error' : ''}`;
+    toast.textContent = message;
+    toast.style.cssText += `
+        backdrop-filter: blur(10px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        animation: toastSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    `;
+    
+    document.body.appendChild(toast);
+    
+    // Show with enhanced animation
+    setTimeout(() => {
+        toast.classList.add('show');
+    }, 10);
+    
+    // Auto hide with animation
+    setTimeout(() => {
+        toast.style.animation = 'toastSlideOut 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 300);
+    }, 2000);
+}
+
+function createActionParticles(element) {
+    const rect = element.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    
+    for (let i = 0; i < 8; i++) {
+        const particle = document.createElement('div');
+        particle.style.cssText = `
+            position: fixed;
+            width: 4px;
+            height: 4px;
+            background: var(--yt-red);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 10000;
+            left: ${centerX}px;
+            top: ${centerY}px;
+            animation: particleBurst 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            animation-delay: ${i * 50}ms;
+            transform: rotate(${i * 45}deg);
+        `;
+        
+        document.body.appendChild(particle);
+        
+        setTimeout(() => {
+            if (particle.parentNode) {
+                particle.parentNode.removeChild(particle);
+            }
+        }, 1000);
+    }
+}
+
+// Add CSS animations for enhanced effects
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes floatUpAndFade {
+        0% {
+            opacity: 1;
+            transform: translateY(0) rotate(0deg);
+        }
+        100% {
+            opacity: 0;
+            transform: translateY(-100vh) rotate(360deg);
+        }
+    }
+    
+    @keyframes toastSlideIn {
+        0% {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.8);
+        }
+        100% {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+    }
+    
+    @keyframes toastSlideOut {
+        0% {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+        100% {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.8);
+        }
+    }
+    
+    @keyframes particleBurst {
+        0% {
+            opacity: 1;
+            transform: scale(1) translateX(0);
+        }
+        100% {
+            opacity: 0;
+            transform: scale(0.5) translateX(50px);
+        }
+    }
+    
+    /* Enhanced video transitions */
+    .yt-shorts-video-container {
+        transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .yt-shorts-video-container.transitioning {
+        filter: blur(2px);
+        transform: scale(0.95);
+    }
+    
+    /* Action icon pulse on active */
+    .yt-shorts-action.active .yt-shorts-action-icon {
+        animation: actionPulse 1s ease-in-out infinite;
+    }
+    
+    @keyframes actionPulse {
+        0%, 100% {
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.4);
+        }
+        50% {
+            transform: scale(1.05);
+            box-shadow: 0 0 0 10px rgba(255, 0, 0, 0);
+        }
+    }
+`;
+document.head.appendChild(style);
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', function() {
+    document.body.classList.remove('shorts-mode');
+});
+</script>
+</body>
+</html>

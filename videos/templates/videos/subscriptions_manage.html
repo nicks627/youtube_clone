@@ -1,0 +1,944 @@
+{% extends 'videos/base.html' %}
+
+{% block title %}登録チャンネル管理 - YouTube Clone{% endblock %}
+
+{% block content %}
+<div class="yt-subscriptions-container">
+    <div class="yt-subscriptions-header">
+        <h1>登録チャンネル</h1>
+        <div class="yt-subscriptions-actions">
+            <button class="yt-btn yt-btn-primary" onclick="showCreateFolderModal()">
+                <i class="fas fa-folder-plus"></i>
+                新しいフォルダー
+            </button>
+        </div>
+    </div>
+    
+    <div class="yt-subscriptions-content">
+        {% if subscriptions_without_folder or subscriptions_by_folder %}
+            <!-- Subscriptions without folder -->
+            {% if subscriptions_without_folder %}
+                <div class="yt-subscription-section">
+                    <div class="yt-section-header">
+                        <h2>
+                            <i class="fas fa-list"></i>
+                            すべての登録チャンネル
+                        </h2>
+                        <span class="yt-section-count">{{ subscriptions_without_folder|length }}</span>
+                    </div>
+                    <div class="yt-subscription-grid">
+                        {% for subscription in subscriptions_without_folder %}
+                            <div class="yt-subscription-card" data-subscription-id="{{ subscription.id }}">
+                                <div class="yt-subscription-avatar">
+                                    {% if subscription.channel.avatar %}
+                                        <img src="{{ subscription.channel.avatar.url }}" alt="{{ subscription.channel.name }}">
+                                    {% else %}
+                                        {{ subscription.channel.name|first|upper }}
+                                    {% endif %}
+                                </div>
+                                <div class="yt-subscription-info">
+                                    <h3 class="yt-subscription-name">{{ subscription.channel.name }}</h3>
+                                    <div class="yt-subscription-stats">
+                                        {{ subscription.channel.get_subscriber_count_display }} 人の登録者
+                                    </div>
+                                    <div class="yt-subscription-date">
+                                        {{ subscription.subscribed_at|date:"Y年m月d日" }}に登録
+                                    </div>
+                                </div>
+                                <div class="yt-subscription-actions">
+                                    <button class="yt-action-btn" onclick="showMoveToFolderModal({{ subscription.id }}, '{{ subscription.channel.name }}')">
+                                        <i class="fas fa-folder"></i>
+                                    </button>
+                                    <button class="yt-action-btn yt-action-btn-danger" onclick="unsubscribeChannel({{ subscription.channel.id }}, '{{ subscription.channel.name }}')">
+                                        <i class="fas fa-bell-slash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+            
+            <!-- Subscriptions by folder -->
+            {% for folder, folder_subscriptions in subscriptions_by_folder.items %}
+                <div class="yt-subscription-section">
+                    <div class="yt-section-header">
+                        <h2>
+                            <i class="fas fa-folder" style="color: {{ folder.color }}"></i>
+                            {{ folder.name }}
+                        </h2>
+                        <div class="yt-section-actions">
+                            <span class="yt-section-count">{{ folder_subscriptions|length }}</span>
+                            <button class="yt-action-btn" onclick="showEditFolderModal({{ folder.id }}, '{{ folder.name }}', '{{ folder.color }}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="yt-action-btn yt-action-btn-danger" onclick="deleteFolder({{ folder.id }}, '{{ folder.name }}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="yt-subscription-grid">
+                        {% for subscription in folder_subscriptions %}
+                            <div class="yt-subscription-card" data-subscription-id="{{ subscription.id }}">
+                                <div class="yt-subscription-avatar">
+                                    {% if subscription.channel.avatar %}
+                                        <img src="{{ subscription.channel.avatar.url }}" alt="{{ subscription.channel.name }}">
+                                    {% else %}
+                                        {{ subscription.channel.name|first|upper }}
+                                    {% endif %}
+                                </div>
+                                <div class="yt-subscription-info">
+                                    <h3 class="yt-subscription-name">{{ subscription.channel.name }}</h3>
+                                    <div class="yt-subscription-stats">
+                                        {{ subscription.channel.get_subscriber_count_display }} 人の登録者
+                                    </div>
+                                    <div class="yt-subscription-date">
+                                        {{ subscription.subscribed_at|date:"Y年m月d日" }}に登録
+                                    </div>
+                                </div>
+                                <div class="yt-subscription-actions">
+                                    <button class="yt-action-btn" onclick="showMoveToFolderModal({{ subscription.id }}, '{{ subscription.channel.name }}')">
+                                        <i class="fas fa-folder"></i>
+                                    </button>
+                                    <button class="yt-action-btn yt-action-btn-danger" onclick="unsubscribeChannel({{ subscription.channel.id }}, '{{ subscription.channel.name }}')">
+                                        <i class="fas fa-bell-slash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="yt-empty-state">
+                <div class="yt-empty-icon">
+                    <i class="fas fa-bell-slash"></i>
+                </div>
+                <h3>まだチャンネルに登録していません</h3>
+                <p>興味のあるチャンネルを見つけて登録してみましょう</p>
+                <a href="{% url 'video_list' %}" class="yt-btn yt-btn-primary">
+                    <i class="fas fa-home"></i>
+                    動画を探す
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Create Folder Modal -->
+<div class="yt-modal" id="createFolderModal">
+    <div class="yt-modal-content">
+        <div class="yt-modal-header">
+            <h3>新しいフォルダーを作成</h3>
+            <button class="yt-modal-close" onclick="hideModal('createFolderModal')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="yt-modal-body">
+            <form id="createFolderForm" onsubmit="createFolder(event)">
+                <div class="yt-form-group">
+                    <label for="folderName">フォルダー名</label>
+                    <input type="text" id="folderName" name="name" required maxlength="50" placeholder="フォルダー名を入力">
+                </div>
+                <div class="yt-form-group">
+                    <label for="folderColor">色</label>
+                    <div class="yt-color-picker">
+                        <input type="color" id="folderColor" name="color" value="#ff0000">
+                        <div class="yt-color-presets">
+                            <button type="button" class="yt-color-preset" style="background: #ff0000" onclick="setColor('#ff0000')"></button>
+                            <button type="button" class="yt-color-preset" style="background: #ff4444" onclick="setColor('#ff4444')"></button>
+                            <button type="button" class="yt-color-preset" style="background: #ff8800" onclick="setColor('#ff8800')"></button>
+                            <button type="button" class="yt-color-preset" style="background: #ffcc00" onclick="setColor('#ffcc00')"></button>
+                            <button type="button" class="yt-color-preset" style="background: #00ff00" onclick="setColor('#00ff00')"></button>
+                            <button type="button" class="yt-color-preset" style="background: #00ccff" onclick="setColor('#00ccff')"></button>
+                            <button type="button" class="yt-color-preset" style="background: #4444ff" onclick="setColor('#4444ff')"></button>
+                            <button type="button" class="yt-color-preset" style="background: #8844ff" onclick="setColor('#8844ff')"></button>
+                        </div>
+                    </div>
+                </div>
+                <div class="yt-modal-actions">
+                    <button type="button" class="yt-btn yt-btn-secondary" onclick="hideModal('createFolderModal')">
+                        キャンセル
+                    </button>
+                    <button type="submit" class="yt-btn yt-btn-primary">
+                        <i class="fas fa-folder-plus"></i>
+                        作成
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Folder Modal -->
+<div class="yt-modal" id="editFolderModal">
+    <div class="yt-modal-content">
+        <div class="yt-modal-header">
+            <h3>フォルダーを編集</h3>
+            <button class="yt-modal-close" onclick="hideModal('editFolderModal')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="yt-modal-body">
+            <form id="editFolderForm" onsubmit="editFolder(event)">
+                <input type="hidden" id="editFolderId">
+                <div class="yt-form-group">
+                    <label for="editFolderName">フォルダー名</label>
+                    <input type="text" id="editFolderName" name="name" required maxlength="50">
+                </div>
+                <div class="yt-form-group">
+                    <label for="editFolderColor">色</label>
+                    <div class="yt-color-picker">
+                        <input type="color" id="editFolderColor" name="color">
+                        <div class="yt-color-presets">
+                            <button type="button" class="yt-color-preset" style="background: #ff0000" onclick="setEditColor('#ff0000')"></button>
+                            <button type="button" class="yt-color-preset" style="background: #ff4444" onclick="setEditColor('#ff4444')"></button>
+                            <button type="button" class="yt-color-preset" style="background: #ff8800" onclick="setEditColor('#ff8800')"></button>
+                            <button type="button" class="yt-color-preset" style="background: #ffcc00" onclick="setEditColor('#ffcc00')"></button>
+                            <button type="button" class="yt-color-preset" style="background: #00ff00" onclick="setEditColor('#00ff00')"></button>
+                            <button type="button" class="yt-color-preset" style="background: #00ccff" onclick="setEditColor('#00ccff')"></button>
+                            <button type="button" class="yt-color-preset" style="background: #4444ff" onclick="setEditColor('#4444ff')"></button>
+                            <button type="button" class="yt-color-preset" style="background: #8844ff" onclick="setEditColor('#8844ff')"></button>
+                        </div>
+                    </div>
+                </div>
+                <div class="yt-modal-actions">
+                    <button type="button" class="yt-btn yt-btn-secondary" onclick="hideModal('editFolderModal')">
+                        キャンセル
+                    </button>
+                    <button type="submit" class="yt-btn yt-btn-primary">
+                        <i class="fas fa-save"></i>
+                        保存
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Move to Folder Modal -->
+<div class="yt-modal" id="moveToFolderModal">
+    <div class="yt-modal-content">
+        <div class="yt-modal-header">
+            <h3 id="moveModalTitle">チャンネルを移動</h3>
+            <button class="yt-modal-close" onclick="hideModal('moveToFolderModal')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="yt-modal-body">
+            <div id="moveFolderList" class="yt-folder-list">
+                <!-- Folders will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.yt-subscriptions-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px;
+}
+
+.yt-subscriptions-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+}
+
+.yt-subscriptions-header h1 {
+    font-size: 32px;
+    font-weight: 600;
+    color: var(--yt-text);
+    margin: 0;
+}
+
+.yt-subscription-section {
+    margin-bottom: 48px;
+}
+
+.yt-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--yt-border);
+}
+
+.yt-section-header h2 {
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--yt-text);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.yt-section-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.yt-section-count {
+    background: var(--yt-card-bg);
+    color: var(--yt-text-secondary);
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.yt-subscription-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.yt-subscription-card {
+    background: var(--yt-card-bg);
+    border: 1px solid var(--yt-border);
+    border-radius: 12px;
+    padding: 16px;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.yt-subscription-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.yt-subscription-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: var(--yt-red);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    overflow: hidden;
+}
+
+.yt-subscription-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.yt-subscription-name {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--yt-text);
+    margin: 0 0 8px 0;
+    line-height: 1.3;
+}
+
+.yt-subscription-stats {
+    font-size: 13px;
+    color: var(--yt-text-secondary);
+    margin-bottom: 4px;
+}
+
+.yt-subscription-date {
+    font-size: 12px;
+    color: var(--yt-text-secondary);
+    margin-bottom: 12px;
+}
+
+.yt-subscription-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.yt-action-btn {
+    background: var(--yt-hover);
+    border: none;
+    color: var(--yt-text);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 14px;
+}
+
+.yt-action-btn:hover {
+    background: var(--yt-border);
+}
+
+.yt-action-btn-danger:hover {
+    background: #ff4444;
+    color: white;
+}
+
+.yt-empty-state {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.yt-empty-icon {
+    font-size: 64px;
+    color: var(--yt-text-secondary);
+    margin-bottom: 24px;
+}
+
+.yt-empty-state h3 {
+    font-size: 24px;
+    font-weight: 500;
+    color: var(--yt-text);
+    margin: 0 0 12px 0;
+}
+
+.yt-empty-state p {
+    color: var(--yt-text-secondary);
+    margin: 0 0 24px 0;
+}
+
+.yt-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 18px;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.yt-btn-primary {
+    background: var(--yt-red);
+    color: white;
+}
+
+.yt-btn-primary:hover {
+    background: var(--yt-dark-red);
+}
+
+.yt-btn-secondary {
+    background: var(--yt-border);
+    color: var(--yt-text);
+}
+
+.yt-btn-secondary:hover {
+    background: var(--yt-hover);
+}
+
+.yt-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+}
+
+.yt-modal.show {
+    display: flex;
+}
+
+.yt-modal-content {
+    background: var(--yt-card-bg);
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.yt-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--yt-border);
+}
+
+.yt-modal-header h3 {
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--yt-text);
+    margin: 0;
+}
+
+.yt-modal-close {
+    background: none;
+    border: none;
+    color: var(--yt-text-secondary);
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 50%;
+    transition: all 0.2s;
+}
+
+.yt-modal-close:hover {
+    background: var(--yt-hover);
+    color: var(--yt-text);
+}
+
+.yt-modal-body {
+    padding: 24px;
+}
+
+.yt-form-group {
+    margin-bottom: 20px;
+}
+
+.yt-form-group label {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--yt-text);
+    margin-bottom: 8px;
+}
+
+.yt-form-group input[type="text"] {
+    width: 100%;
+    background: var(--yt-bg);
+    border: 1px solid var(--yt-border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    color: var(--yt-text);
+    font-size: 14px;
+}
+
+.yt-form-group input[type="text"]:focus {
+    outline: none;
+    border-color: var(--yt-red);
+}
+
+.yt-color-picker {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.yt-color-picker input[type="color"] {
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.yt-color-presets {
+    display: flex;
+    gap: 8px;
+}
+
+.yt-color-preset {
+    width: 32px;
+    height: 32px;
+    border: 2px solid var(--yt-border);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.yt-color-preset:hover {
+    transform: scale(1.1);
+    border-color: var(--yt-text);
+}
+
+.yt-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+.yt-folder-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.yt-folder-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border: 1px solid var(--yt-border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.yt-folder-item:hover {
+    background: var(--yt-hover);
+}
+
+.yt-folder-item.selected {
+    background: var(--yt-red);
+    color: white;
+    border-color: var(--yt-red);
+}
+
+@media (max-width: 768px) {
+    .yt-subscriptions-container {
+        padding: 0 16px;
+    }
+    
+    .yt-subscriptions-header {
+        flex-direction: column;
+        gap: 16px;
+        align-items: flex-start;
+    }
+    
+    .yt-subscription-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .yt-section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Modal management
+function showModal(modalId) {
+    document.getElementById(modalId).classList.add('show');
+}
+
+function hideModal(modalId) {
+    document.getElementById(modalId).classList.remove('show');
+}
+
+// Color picker functions
+function setColor(color) {
+    document.getElementById('folderColor').value = color;
+}
+
+function setEditColor(color) {
+    document.getElementById('editFolderColor').value = color;
+}
+
+// Create folder modal
+function showCreateFolderModal() {
+    document.getElementById('createFolderForm').reset();
+    document.getElementById('folderColor').value = '#ff0000';
+    showModal('createFolderModal');
+}
+
+// Edit folder modal
+function showEditFolderModal(folderId, folderName, folderColor) {
+    document.getElementById('editFolderId').value = folderId;
+    document.getElementById('editFolderName').value = folderName;
+    document.getElementById('editFolderColor').value = folderColor;
+    showModal('editFolderModal');
+}
+
+// Move to folder modal
+function showMoveToFolderModal(subscriptionId, channelName) {
+    document.getElementById('moveModalTitle').textContent = `"${channelName}" を移動`;
+    
+    // Populate folder list
+    const folderList = document.getElementById('moveFolderList');
+    folderList.innerHTML = `
+        <div class="yt-folder-item" onclick="moveToFolder(${subscriptionId}, null)">
+            <i class="fas fa-list"></i>
+            <span>フォルダーなし</span>
+        </div>
+    `;
+    
+    // Add existing folders
+    {% for folder in folders %}
+        folderList.innerHTML += `
+            <div class="yt-folder-item" onclick="moveToFolder(${subscriptionId}, {{ folder.id }})">
+                <i class="fas fa-folder" style="color: {{ folder.color }}"></i>
+                <span>{{ folder.name }}</span>
+            </div>
+        `;
+    {% endfor %}
+    
+    showModal('moveToFolderModal');
+}
+
+// API functions
+async function createFolder(event) {
+    event.preventDefault();
+    
+    const formData = new FormData(event.target);
+    const data = {
+        name: formData.get('name'),
+        color: formData.get('color')
+    };
+    
+    try {
+        const response = await fetch('{% url "create_folder" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            showNotification(result.message, 'success');
+            hideModal('createFolderModal');
+            location.reload();
+        } else {
+            showNotification(result.error, 'error');
+        }
+    } catch (error) {
+        showNotification('エラーが発生しました', 'error');
+    }
+}
+
+async function editFolder(event) {
+    event.preventDefault();
+    
+    const folderId = document.getElementById('editFolderId').value;
+    const formData = new FormData(event.target);
+    const data = {
+        name: formData.get('name'),
+        color: formData.get('color')
+    };
+    
+    try {
+        const response = await fetch(`/api/folders/${folderId}/edit/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            showNotification(result.message, 'success');
+            hideModal('editFolderModal');
+            location.reload();
+        } else {
+            showNotification(result.error, 'error');
+        }
+    } catch (error) {
+        showNotification('エラーが発生しました', 'error');
+    }
+}
+
+async function deleteFolder(folderId, folderName) {
+    if (!confirm(`フォルダー "${folderName}" を削除しますか？\n\nフォルダー内のチャンネルは「すべての登録チャンネル」に移動されます。`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/folders/${folderId}/delete/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            showNotification(result.message, 'success');
+            location.reload();
+        } else {
+            showNotification(result.error, 'error');
+        }
+    } catch (error) {
+        showNotification('エラーが発生しました', 'error');
+    }
+}
+
+async function moveToFolder(subscriptionId, folderId) {
+    try {
+        const response = await fetch('{% url "move_subscription_to_folder" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                subscription_id: subscriptionId,
+                folder_id: folderId
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            showNotification(result.message, 'success');
+            hideModal('moveToFolderModal');
+            location.reload();
+        } else {
+            showNotification(result.error, 'error');
+        }
+    } catch (error) {
+        showNotification('エラーが発生しました', 'error');
+    }
+}
+
+async function unsubscribeChannel(channelId, channelName) {
+    if (!confirm(`"${channelName}" の登録を解除しますか？`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('{% url "toggle_subscription" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                channel_id: channelId
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            showNotification(result.message, 'success');
+            location.reload();
+        } else {
+            showNotification(result.error, 'error');
+        }
+    } catch (error) {
+        showNotification('エラーが発生しました', 'error');
+    }
+}
+
+// Utility functions
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function showNotification(message, type = 'info') {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `yt-notification yt-notification-${type}`;
+    notification.innerHTML = `
+        <div class="yt-notification-content">
+            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    
+    // Add styles if not already present
+    if (!document.querySelector('#notification-styles')) {
+        const style = document.createElement('style');
+        style.id = 'notification-styles';
+        style.textContent = `
+            .yt-notification {
+                position: fixed;
+                top: 80px;
+                right: 20px;
+                z-index: 10000;
+                background: var(--yt-card-bg);
+                border: 1px solid var(--yt-border);
+                border-radius: 8px;
+                padding: 12px 16px;
+                min-width: 300px;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+                transform: translateX(100%);
+                transition: transform 0.3s ease;
+            }
+            
+            .yt-notification.show {
+                transform: translateX(0);
+            }
+            
+            .yt-notification-success {
+                border-left: 4px solid #00d563;
+            }
+            
+            .yt-notification-error {
+                border-left: 4px solid #ff4444;
+            }
+            
+            .yt-notification-info {
+                border-left: 4px solid #4285f4;
+            }
+            
+            .yt-notification-content {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                color: var(--yt-text);
+            }
+            
+            .yt-notification-success i {
+                color: #00d563;
+            }
+            
+            .yt-notification-error i {
+                color: #ff4444;
+            }
+            
+            .yt-notification-info i {
+                color: #4285f4;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    // Add to page
+    document.body.appendChild(notification);
+    
+    // Trigger animation
+    setTimeout(() => {
+        notification.classList.add('show');
+    }, 100);
+    
+    // Remove after delay
+    setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, 3000);
+}
+
+// Close modals when clicking outside
+document.addEventListener('click', function(event) {
+    if (event.target.classList.contains('yt-modal')) {
+        hideModal(event.target.id);
+    }
+});
+</script>
+{% endblock %}

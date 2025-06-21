@@ -1,0 +1,27 @@
+<!-- Notification Menu Component -->
+{% load static %}
+
+<div class="yt-notification-menu">
+    <button class="yt-header-button yt-notification-button">
+        <i class="fas fa-bell"></i>
+        <span class="yt-notification-count" id="notificationCount" style="display: none;">0</span>
+    </button>
+    
+    <div class="yt-notification-dropdown" id="notificationDropdown">
+        <div class="yt-notification-header">
+            <h3>通知</h3>
+            <button class="yt-notification-clear">
+                <i class="fas fa-check-double"></i>
+            </button>
+        </div>
+        
+        <div class="yt-notification-list" id="notificationList">
+            <div class="yt-notification-empty">
+                <i class="fas fa-bell-slash"></i>
+                <p>新しい通知はありません</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Notification Styles and JavaScript loaded in base.html -->

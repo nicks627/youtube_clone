@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(django-admin startproject:*)",
+      "Bash(python manage.py:*)",
+      "Bash(mkdir:*)",
+      "Bash(python:*)",
+      "Bash(pkill:*)",
+      "Bash(rg:*)",
+      "Bash(find:*)",
+      "Bash(chmod:*)",
+      "Bash(grep:*)",
+      "Bash(mv:*)",
+      "Bash(cp:*)",
+      "Bash(curl:*)",
+      "Bash(rm:*)",
+      "Bash(true)"
+    ],
+    "deny": []
+  }
+}

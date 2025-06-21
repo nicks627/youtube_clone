@@ -1,0 +1,197 @@
+{% extends 'videos/base.html' %}
+
+{% block title %}探索 - YouTube Clone{% endblock %}
+
+{% block extra_css %}
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 1280px; margin: 0 auto; padding: 0 24px;">
+    <div style="text-align: center; margin-bottom: 48px; padding-bottom: 24px; border-bottom: 1px solid var(--yt-border);">
+        <h1 style="font-size: 36px; font-weight: 700; color: var(--yt-text); margin: 0 0 8px 0;">探索</h1>
+        <p style="font-size: 18px; color: var(--yt-text-secondary); margin: 0;">さまざまなジャンルの動画を発見しよう</p>
+    </div>
+
+    {% if trending_videos %}
+    <div style="margin-bottom: 48px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
+            <h2 style="font-size: 24px; font-weight: 600; color: var(--yt-text); margin: 0;">急上昇</h2>
+            <a href="{% url 'trending' %}" style="display: flex; align-items: center; gap: 8px; color: var(--yt-text-secondary); text-decoration: none; font-size: 14px; font-weight: 500;">
+                <span>すべて見る</span>
+                <i class="fas fa-chevron-right"></i>
+            </a>
+        </div>
+        <div class="yt-video-grid">
+            {% for video in trending_videos %}
+                <div class="yt-video-card" onclick="location.href='{% url 'video_detail' video.pk %}'">
+                    <div class="yt-video-thumbnail">
+                        {% if video.thumbnail %}
+                            <img src="{{ video.thumbnail.url }}" alt="{{ video.title }}" loading="lazy">
+                        {% else %}
+                            <div style="width: 100%; height: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-play" style="font-size: 48px; color: rgba(255,255,255,0.8);"></i>
+                            </div>
+                        {% endif %}
+                        <div class="yt-video-duration">{{ video.get_duration_display }}</div>
+                    </div>
+                    <div class="yt-video-info">
+                        <div class="yt-video-avatar">
+                            {{ video.uploaded_by.username|first|upper }}
+                        </div>
+                        <div class="yt-video-details">
+                            <h3 class="yt-video-title">{{ video.title }}</h3>
+                            <div class="yt-video-meta">
+                                <div class="yt-video-channel">{{ video.uploaded_by.username }}</div>
+                                <div class="yt-video-stats">
+                                    <span>{{ video.views|floatformat:0 }} 回視聴</span>
+                                    <span>•</span>
+                                    <span>{{ video.uploaded_at|timesince }}前</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if music_videos %}
+    <div style="margin-bottom: 48px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
+            <h2 style="font-size: 24px; font-weight: 600; color: var(--yt-text); margin: 0;">音楽</h2>
+            <a href="{% url 'video_list_by_genre' 'music' %}" style="display: flex; align-items: center; gap: 8px; color: var(--yt-text-secondary); text-decoration: none; font-size: 14px; font-weight: 500;">
+                <span>すべて見る</span>
+                <i class="fas fa-chevron-right"></i>
+            </a>
+        </div>
+        <div class="yt-video-grid">
+            {% for video in music_videos %}
+                <div class="yt-video-card" onclick="location.href='{% url 'video_detail' video.pk %}'">
+                    <div class="yt-video-thumbnail">
+                        {% if video.thumbnail %}
+                            <img src="{{ video.thumbnail.url }}" alt="{{ video.title }}" loading="lazy">
+                        {% else %}
+                            <div style="width: 100%; height: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-music" style="font-size: 48px; color: rgba(255,255,255,0.8);"></i>
+                            </div>
+                        {% endif %}
+                        <div class="yt-video-duration">{{ video.get_duration_display }}</div>
+                    </div>
+                    <div class="yt-video-info">
+                        <div class="yt-video-avatar">
+                            {{ video.uploaded_by.username|first|upper }}
+                        </div>
+                        <div class="yt-video-details">
+                            <h3 class="yt-video-title">{{ video.title }}</h3>
+                            <div class="yt-video-meta">
+                                <div class="yt-video-channel">{{ video.uploaded_by.username }}</div>
+                                <div class="yt-video-stats">
+                                    <span>{{ video.views|floatformat:0 }} 回視聴</span>
+                                    <span>•</span>
+                                    <span>{{ video.uploaded_at|timesince }}前</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if gaming_videos %}
+    <div style="margin-bottom: 48px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
+            <h2 style="font-size: 24px; font-weight: 600; color: var(--yt-text); margin: 0;">ゲーム</h2>
+            <a href="{% url 'video_list_by_genre' 'gaming' %}" style="display: flex; align-items: center; gap: 8px; color: var(--yt-text-secondary); text-decoration: none; font-size: 14px; font-weight: 500;">
+                <span>すべて見る</span>
+                <i class="fas fa-chevron-right"></i>
+            </a>
+        </div>
+        <div class="yt-video-grid">
+            {% for video in gaming_videos %}
+                <div class="yt-video-card" onclick="location.href='{% url 'video_detail' video.pk %}'">
+                    <div class="yt-video-thumbnail">
+                        {% if video.thumbnail %}
+                            <img src="{{ video.thumbnail.url }}" alt="{{ video.title }}" loading="lazy">
+                        {% else %}
+                            <div style="width: 100%; height: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-gamepad" style="font-size: 48px; color: rgba(255,255,255,0.8);"></i>
+                            </div>
+                        {% endif %}
+                        <div class="yt-video-duration">{{ video.get_duration_display }}</div>
+                    </div>
+                    <div class="yt-video-info">
+                        <div class="yt-video-avatar">
+                            {{ video.uploaded_by.username|first|upper }}
+                        </div>
+                        <div class="yt-video-details">
+                            <h3 class="yt-video-title">{{ video.title }}</h3>
+                            <div class="yt-video-meta">
+                                <div class="yt-video-channel">{{ video.uploaded_by.username }}</div>
+                                <div class="yt-video-stats">
+                                    <span>{{ video.views|floatformat:0 }} 回視聴</span>
+                                    <span>•</span>
+                                    <span>{{ video.uploaded_at|timesince }}前</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if popular_videos %}
+    <div style="margin-bottom: 48px;">
+        <div style="margin-bottom: 24px;">
+            <h2 style="font-size: 24px; font-weight: 600; color: var(--yt-text); margin: 0;">人気の動画</h2>
+        </div>
+        <div class="yt-video-grid">
+            {% for video in popular_videos %}
+                <div class="yt-video-card" onclick="location.href='{% url 'video_detail' video.pk %}'">
+                    <div class="yt-video-thumbnail">
+                        {% if video.thumbnail %}
+                            <img src="{{ video.thumbnail.url }}" alt="{{ video.title }}" loading="lazy">
+                        {% else %}
+                            <div style="width: 100%; height: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-play" style="font-size: 48px; color: rgba(255,255,255,0.8);"></i>
+                            </div>
+                        {% endif %}
+                        <div class="yt-video-duration">{{ video.get_duration_display }}</div>
+                    </div>
+                    <div class="yt-video-info">
+                        <div class="yt-video-avatar">
+                            {{ video.uploaded_by.username|first|upper }}
+                        </div>
+                        <div class="yt-video-details">
+                            <h3 class="yt-video-title">{{ video.title }}</h3>
+                            <div class="yt-video-meta">
+                                <div class="yt-video-channel">{{ video.uploaded_by.username }}</div>
+                                <div class="yt-video-stats">
+                                    <span>{{ video.views|floatformat:0 }} 回視聴</span>
+                                    <span>•</span>
+                                    <span>{{ video.uploaded_at|timesince }}前</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if not trending_videos and not music_videos and not gaming_videos and not popular_videos %}
+    <div style="text-align: center; padding: 80px 20px;">
+        <div style="font-size: 64px; color: var(--yt-text-secondary); margin-bottom: 24px;">
+            <i class="fas fa-compass"></i>
+        </div>
+        <h3 style="font-size: 24px; font-weight: 600; color: var(--yt-text); margin: 0 0 12px 0;">探索する動画がありません</h3>
+        <p style="font-size: 16px; color: var(--yt-text-secondary); margin: 0; max-width: 400px; margin: 0 auto;">まだ動画がアップロードされていません。しばらく経ってから再度確認してください。</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

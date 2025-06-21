@@ -1,0 +1,51 @@
+<!-- Header Component -->
+{% load static %}
+
+<header class="yt-header">
+    <div class="yt-header-left">
+        <button class="yt-menu-button">
+            <i class="fas fa-bars"></i>
+        </button>
+        <a href="{% url 'video_list' %}" class="yt-logo">
+            <i class="fab fa-youtube"></i>
+            <span class="yt-logo-text">YouTube Clone</span>
+        </a>
+    </div>
+    
+    <div class="yt-header-center">
+        <form method="GET" action="{% url 'search_videos' %}" class="yt-search-container">
+            <input type="text" name="q" class="yt-search-input" placeholder="検索" value="{{ search_query|default:'' }}">
+            <button type="submit" class="yt-search-button">
+                <i class="fas fa-search"></i>
+            </button>
+        </form>
+    </div>
+    
+    <div class="yt-header-right">
+        {% if user.is_authenticated %}
+            <!-- Upload Button -->
+            <a href="{% url 'upload_video' %}" class="yt-upload-button">
+                <i class="fas fa-video-plus"></i>
+                <span>作成</span>
+            </a>
+            
+            <!-- Notification Component -->
+            {% include 'videos/components/notification_menu.html' %}
+            
+            <!-- User Menu Component -->
+            {% include 'videos/components/user_menu.html' %}
+        {% else %}
+            <!-- Auth Buttons -->
+            <a href="{% url 'login' %}" class="yt-auth-button yt-login-button">
+                <i class="fas fa-sign-in-alt"></i>
+                <span>ログイン</span>
+            </a>
+            <a href="{% url 'signup' %}" class="yt-auth-button yt-signup-button">
+                <i class="fas fa-user-plus"></i>
+                <span>新規登録</span>
+            </a>
+        {% endif %}
+    </div>
+</header>
+
+<!-- Header Styles and JavaScript loaded in base.html -->

@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: youtube-clone
+    env: python
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn youtube_clone.wsgi:application"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.0
+      - key: DJANGO_SETTINGS_MODULE
+        value: youtube_clone.production_settings
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: youtube-clone-db
+          property: connectionString
+    plan: free
+
+databases:
+  - name: youtube-clone-db
+    databaseName: youtube_clone
+    user: youtube_clone_user
+    plan: free
