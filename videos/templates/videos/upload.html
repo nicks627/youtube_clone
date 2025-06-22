@@ -7,6 +7,17 @@
     <div class="yt-upload-header">
         <h1>動画をアップロード</h1>
         <p class="yt-upload-subtitle">コンテンツを作成してチャンネルを成長させましょう</p>
+        
+        <!-- Messages -->
+        {% if messages %}
+            <div class="yt-messages">
+                {% for message in messages %}
+                    <div class="yt-message yt-message-{{ message.tags }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
     </div>
     
     <div class="yt-upload-content">
@@ -232,6 +243,41 @@
     font-size: 16px;
     color: var(--yt-text-secondary);
     margin: 0;
+}
+
+.yt-messages {
+    margin-top: 20px;
+}
+
+.yt-message {
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.yt-message-success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.yt-message-error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.yt-message-warning {
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
+.yt-message-info {
+    background-color: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
 }
 
 .yt-upload-section {
@@ -577,6 +623,31 @@
     
     .yt-upload-dropzone {
         padding: 40px 20px;
+        /* モバイルでのタッチ操作を改善 */
+        min-height: 200px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .yt-upload-dropzone h3 {
+        font-size: 18px;
+        text-align: center;
+    }
+    
+    .yt-upload-dropzone p {
+        font-size: 14px;
+        text-align: center;
+    }
+    
+    .yt-file-input-label {
+        font-size: 16px;
+        padding: 16px 32px;
+        /* タッチしやすいサイズに調整 */
+        min-height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
     
     .yt-thumbnail-upload {
@@ -587,15 +658,50 @@
     .yt-thumbnail-preview {
         width: 100%;
         max-width: 200px;
+        align-self: center;
     }
     
     .yt-upload-actions {
         flex-direction: column-reverse;
+        gap: 12px;
+        position: sticky;
+        bottom: 0;
+        background: var(--yt-bg);
+        padding: 16px 0;
+        margin: 16px -16px 0;
+        border-top: 1px solid var(--yt-border);
     }
     
     .yt-btn {
         width: 100%;
         justify-content: center;
+        min-height: 48px;
+        font-size: 16px;
+    }
+    
+    /* フォーム要素のモバイル最適化 */
+    .yt-form-group input[type="text"],
+    .yt-form-group textarea,
+    .yt-form-group select {
+        font-size: 16px; /* iOSでのズーム防止 */
+        min-height: 48px;
+    }
+    
+    .yt-form-group textarea {
+        min-height: 120px;
+    }
+    
+    /* チェックボックスとラジオボタンのタッチエリア拡大 */
+    .yt-checkbox-label {
+        padding: 8px 0;
+        min-height: 48px;
+        align-items: center;
+    }
+    
+    .yt-checkbox-label input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        margin-top: 0;
     }
 }
 </style>
@@ -632,37 +738,61 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Drag and drop functionality
-    dropzone.addEventListener('dragover', function(e) {
-        e.preventDefault();
-        dropzone.classList.add('dragover');
-    });
+    // モバイルデバイス検出
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     
-    dropzone.addEventListener('dragleave', function(e) {
-        e.preventDefault();
-        dropzone.classList.remove('dragover');
-    });
-    
-    dropzone.addEventListener('drop', function(e) {
-        e.preventDefault();
-        dropzone.classList.remove('dragover');
+    // Drag and drop functionality (デスクトップのみ)
+    if (!isMobile) {
+        dropzone.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            dropzone.classList.add('dragover');
+        });
         
-        const files = e.dataTransfer.files;
-        if (files.length > 0) {
-            const file = files[0];
-            // MP4ファイルかチェック
-            if (!file.name.toLowerCase().endsWith('.mp4')) {
-                alert('MP4形式のファイルのみアップロード可能です。');
-                return;
+        dropzone.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            dropzone.classList.remove('dragover');
+        });
+        
+        dropzone.addEventListener('drop', function(e) {
+            e.preventDefault();
+            dropzone.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                const file = files[0];
+                // MP4ファイルかチェック
+                if (!file.name.toLowerCase().endsWith('.mp4')) {
+                    alert('MP4形式のファイルのみアップロード可能です。');
+                    return;
+                }
+                // より緩い MIME タイプチェック
+                if (file.type && !file.type.startsWith('video/')) {
+                    alert('動画ファイルのみアップロード可能です。');
+                    return;
+                }
+                fileInput.files = files;
+                handleVideoSelect(file);
             }
-            if (file.type && file.type !== 'video/mp4') {
-                alert('MP4形式のファイルのみアップロード可能です。');
-                return;
+        });
+    }
+    
+    // モバイルでは dropzone クリックでファイル選択
+    if (isMobile) {
+        dropzone.addEventListener('click', function(e) {
+            if (e.target === dropzone || e.target.closest('.yt-upload-dropzone-content')) {
+                fileInput.click();
             }
-            fileInput.files = files;
-            handleVideoSelect(file);
+        });
+        
+        // ドラッグ&ドロップのヒントをモバイルでは表示しない
+        const dropzoneContent = dropzone.querySelector('.yt-upload-dropzone-content');
+        if (dropzoneContent) {
+            const hint = dropzoneContent.querySelector('h3');
+            if (hint) {
+                hint.textContent = '動画ファイルを選択';
+            }
         }
-    });
+    }
     
     // File input change
     fileInput.addEventListener('change', function(e) {
@@ -674,8 +804,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 e.target.value = ''; // ファイル選択をクリア
                 return;
             }
-            if (file.type && file.type !== 'video/mp4') {
-                alert('MP4形式のファイルのみアップロード可能です。');
+            // より緩い MIME タイプチェック
+            if (file.type && !file.type.startsWith('video/')) {
+                alert('動画ファイルのみアップロード可能です。');
                 e.target.value = ''; // ファイル選択をクリア
                 return;
             }

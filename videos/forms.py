@@ -28,9 +28,9 @@ class VideoUploadForm(forms.ModelForm):
             if file_extension != '.mp4':
                 raise ValidationError('MP4形式のファイルのみアップロード可能です。')
             
-            # MIMEタイプをチェック
-            if video_file.content_type != 'video/mp4':
-                raise ValidationError('MP4形式のファイルのみアップロード可能です。')
+            # MIMEタイプをチェック（より緩い検証）
+            if video_file.content_type and not video_file.content_type.startswith('video/'):
+                raise ValidationError('動画ファイルのみアップロード可能です。')
             
             # ファイルサイズをチェック（128GB制限）
             max_size = 128 * 1024 * 1024 * 1024  # 128GB in bytes

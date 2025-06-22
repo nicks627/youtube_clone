@@ -17,7 +17,11 @@ def get_video_duration(video_file):
         # ファイルパスを取得
         if hasattr(video_file, 'temporary_file_path'):
             # UploadedFile の場合
-            file_path = video_file.temporary_file_path()
+            try:
+                file_path = video_file.temporary_file_path()
+            except AttributeError:
+                # temporary_file_pathが利用できない場合は処理をスキップ
+                return None
         elif hasattr(video_file, 'path'):
             # FileField の場合
             file_path = video_file.path
@@ -26,7 +30,7 @@ def get_video_duration(video_file):
             file_path = str(video_file)
         
         # ファイルが存在するかチェック
-        if not os.path.exists(file_path):
+        if not file_path or not os.path.exists(file_path):
             return None
         
         # FFprobeコマンドを実行

@@ -185,15 +185,23 @@ def upload_video(request):
     if request.method == 'POST':
         form = VideoUploadForm(request.POST, request.FILES)
         if form.is_valid():
-            video = form.save(commit=False)
-            video.uploaded_by = request.user
-            video.save()
-            
-            # 新しい動画の通知を送信
-            NotificationService.notify_new_video(video)
-            
-            messages.success(request, '動画のアップロードが完了しました！')
-            return redirect('video_list')
+            try:
+                video = form.save(commit=False)
+                video.uploaded_by = request.user
+                video.save()
+                
+                # 新しい動画の通知を送信
+                NotificationService.notify_new_video(video)
+                
+                messages.success(request, '動画のアップロードが完了しました！')
+                return redirect('video_list')
+            except Exception as e:
+                messages.error(request, f'アップロード中にエラーが発生しました: {str(e)}')
+        else:
+            # フォームエラーがある場合
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'{form.fields[field].label if field in form.fields else field}: {error}')
     else:
         form = VideoUploadForm()
     context = {'form': form}
